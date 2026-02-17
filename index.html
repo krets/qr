@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator | qr.krets.com</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- qrcode-generator library for matrix calculation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar: Controls -->
+        <aside class="sidebar">
+            <header>
+                <h1>QR Generator</h1>
+                <p class="subtitle">qr.krets.com</p>
+            </header>
+
+            <!-- Data Tabs -->
+            <section class="controls-section">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="wifi">WiFi</button>
+                    <button class="tab-btn" data-tab="url">URL</button>
+                    <button class="tab-btn" data-tab="vcard">vCard</button>
+                    <button class="tab-btn" data-tab="raw">Raw</button>
+                </div>
+
+                <div class="tab-content">
+                    <!-- WiFi Tab -->
+                    <div id="tab-wifi" class="tab-pane active">
+                        <div class="field">
+                            <label for="wifi-ssid">Network Name (SSID)</label>
+                            <input type="text" id="wifi-ssid" placeholder="My Network">
+                        </div>
+                        <div class="field">
+                            <label for="wifi-pass">Password</label>
+                            <input type="password" id="wifi-pass" placeholder="Network Password">
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="wifi-enc">Encryption</label>
+                                <select id="wifi-enc">
+                                    <option value="WPA">WPA/WPA2</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">None</option>
+                                </select>
+                            </div>
+                            <div class="field checkbox-field">
+                                <label>
+                                    <input type="checkbox" id="wifi-hidden"> Hidden
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Tab -->
+                    <div id="tab-url" class="tab-pane">
+                        <div class="field">
+                            <label for="url-input">Website URL</label>
+                            <input type="url" id="url-input" placeholder="https://example.com">
+                        </div>
+                    </div>
+
+                    <!-- vCard Tab -->
+                    <div id="tab-vcard" class="tab-pane">
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="vc-fn">First Name</label>
+                                <input type="text" id="vc-fn">
+                            </div>
+                            <div class="field">
+                                <label for="vc-ln">Last Name</label>
+                                <input type="text" id="vc-ln">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="vc-org">Organization</label>
+                            <input type="text" id="vc-org">
+                        </div>
+                        <div class="field">
+                            <label for="vc-title">Title/Role</label>
+                            <input type="text" id="vc-title">
+                        </div>
+                        <div class="field">
+                            <label for="vc-bday">Birthday</label>
+                            <input type="date" id="vc-bday">
+                        </div>
+                        <div class="field">
+                            <label for="vc-tel-m">Mobile Phone</label>
+                            <input type="tel" id="vc-tel-m">
+                        </div>
+                        <div class="field">
+                            <label for="vc-tel-w">Work Phone</label>
+                            <input type="tel" id="vc-tel-w">
+                        </div>
+                        <div class="field">
+                            <label for="vc-email">Email</label>
+                            <input type="email" id="vc-email">
+                        </div>
+                        <div class="field">
+                            <label for="vc-web">Website</label>
+                            <input type="url" id="vc-web" placeholder="https://">
+                        </div>
+                        
+                        <h4>Address</h4>
+                        <div class="field">
+                            <label for="vc-adr">Street Address</label>
+                            <input type="text" id="vc-adr">
+                        </div>
+                        <div class="field-row">
+                            <div class="field" style="flex: 1;">
+                                <label for="vc-zip">Zip/Postal Code</label>
+                                <input type="text" id="vc-zip">
+                            </div>
+                            <div class="field" style="flex: 2;">
+                                <label for="vc-city">City</label>
+                                <input type="text" id="vc-city">
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="vc-state">State/Region</label>
+                                <input type="text" id="vc-state">
+                            </div>
+                            <div class="field">
+                                <label for="vc-country">Country</label>
+                                <input type="text" id="vc-country">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Raw Tab -->
+                    <div id="tab-raw" class="tab-pane">
+                        <div class="field">
+                            <label for="raw-data">Raw Data Content</label>
+                            <textarea id="raw-data" rows="6"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Styling Sidebar -->
+            <section class="controls-section styling-controls">
+                <h3>Global Settings</h3>
+                <div class="field">
+                    <label for="qr-error">Error Correction</label>
+                    <select id="qr-error">
+                        <option value="L">Low (7%)</option>
+                        <option value="M" selected>Medium (15%)</option>
+                        <option value="Q">Quartile (25%)</option>
+                        <option value="H">High (30%)</option>
+                    </select>
+                    <small class="help-text">High recommended for complex styling or print.</small>
+                </div>
+
+                <h3>Appearance</h3>
+                <div class="field-row">
+                    <div class="field">
+                        <label for="color-fg">Foreground</label>
+                        <input type="color" id="color-fg" value="#000000">
+                    </div>
+                    <div class="field">
+                        <label for="color-bg">Background</label>
+                        <input type="color" id="color-bg" value="#ffffff">
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="shape-module">Module Shape</label>
+                        <select id="shape-module">
+                            <option value="square">Square</option>
+                            <option value="dots">Dots</option>
+                            <option value="rounded">Rounded</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="shape-finder">Finder Pattern</label>
+                        <select id="shape-finder">
+                            <option value="square">Square</option>
+                            <option value="dots">Circle</option>
+                            <option value="rounded">Rounded Square</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3>Labels</h3>
+                
+                <!-- Font Datalist -->
+                <datalist id="font-list">
+                    <option value="sans-serif">Sans-Serif (System)</option>
+                    <option value="serif">Serif (System)</option>
+                    <option value="monospace">Monospace (System)</option>
+                    <option value="Segoe UI Symbol">Segoe UI Symbol</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Tahoma">Tahoma</option>
+                    <option value="Trebuchet MS">Trebuchet MS</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Garamond">Garamond</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Brush Script MT">Brush Script MT</option>
+                </datalist>
+
+                <!-- Top Label -->
+                <div class="label-group">
+                    <h4>Top Label</h4>
+                    <div class="field">
+                        <input type="text" id="label-top-text" placeholder="Text (e.g. SCAN ME)">
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="label-top-align">Align</label>
+                            <select id="label-top-align">
+                                <option value="center">Center</option>
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="label-top-color">Color</label>
+                            <input type="color" id="label-top-color" value="#000000">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="label-top-font">Font</label>
+                        <input type="text" id="label-top-font" list="font-list" placeholder="Select or type font" value="sans-serif">
+                    </div>
+                </div>
+
+                <!-- Bottom Label -->
+                <div class="label-group" style="margin-top: 1.5rem;">
+                    <h4>Bottom Label</h4>
+                    <div class="field">
+                        <input type="text" id="label-bottom-text" placeholder="Text">
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="label-bottom-align">Align</label>
+                            <select id="label-bottom-align">
+                                <option value="center">Center</option>
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="label-bottom-color">Color</label>
+                            <input type="color" id="label-bottom-color" value="#000000">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="label-bottom-font">Font</label>
+                        <input type="text" id="label-bottom-font" list="font-list" placeholder="Select or type font" value="sans-serif">
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Content: Preview -->
+        <main class="preview-area">
+            <div class="canvas-wrapper">
+                <canvas id="qr-canvas"></canvas>
+            </div>
+            <div class="actions">
+                <button id="download-btn" class="primary-btn">Download PNG</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
