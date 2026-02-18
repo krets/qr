@@ -11,6 +11,22 @@ if (file_exists($gitRefPath)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator | qr.krets.com</title>
+    <meta name="description" content="A simple, privacy-focused QR code generator. Generate vCards, Wi-Fi, and URL QR codes entirely in your browser.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://qr.krets.com/">
+    <meta property="og:title" content="QR Code Generator | qr.krets.com">
+    <meta property="og:description" content="Generate custom QR codes for vCards, Wi-Fi networks, and URLs. No server-side processing, fully private.">
+    <meta property="og:image" content="https://qr.krets.com/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://qr.krets.com/">
+    <meta property="twitter:title" content="QR Code Generator | qr.krets.com">
+    <meta property="twitter:description" content="Generate custom QR codes for vCards, Wi-Fi networks, and URLs. No server-side processing, fully private.">
+    <meta property="twitter:image" content="https://qr.krets.com/og-image.png">
+
     <link rel="stylesheet" href="style.css?v=<?= $version ?>">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
