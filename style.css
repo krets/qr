@@ -81,7 +81,9 @@ header h1 {
 
 canvas {
     max-width: 100%;
-    height: auto !important;
+    max-height: 350px; /* Constrain visual height */
+    width: auto;       /* Maintain aspect ratio */
+    height: auto;      /* Maintain aspect ratio */
     image-rendering: pixelated;
 }
 

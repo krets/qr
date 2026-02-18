@@ -615,20 +615,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function restoreState(loadedState) {
         state.activeTab = loadedState.activeTab || 'raw';
-        state.data = loadedState.data || '';
-        state.inputValues = loadedState.inputValues || {};
+        // We do NOT overwrite active data immediately; we let updateDataFromInputs regenerate it 
+        // from the restored inputs to ensure consistency.
+        
+        // Merge settings
         state.settings = { ...state.settings, ...loadedState.settings };
         if (loadedState.settings.labelTop) state.settings.labelTop = { ...loadedState.settings.labelTop };
         if (loadedState.settings.labelBottom) state.settings.labelBottom = { ...loadedState.settings.labelBottom };
 
-        Object.entries(state.inputValues).forEach(([id, val]) => {
+        const newValues = loadedState.inputValues || {};
+
+        Object.entries(newValues).forEach(([id, val]) => {
             const el = document.getElementById(id);
             if (el) {
-                if (el.type === 'checkbox') el.checked = val;
-                else el.value = val;
+                // Determine if we should restore this field
+                const parentTab = el.closest('.tab-pane');
+                let shouldRestore = false;
+
+                if (!parentTab) {
+                    // Global setting (not in a tab) -> Always restore
+                    shouldRestore = true;
+                } else if (parentTab.id === `tab-${state.activeTab}`) {
+                    // Input belongs to the active tab of the loaded QR -> Restore
+                    shouldRestore = true;
+                }
+
+                if (shouldRestore) {
+                    if (el.type === 'checkbox') {
+                        el.checked = val;
+                    } else {
+                        el.value = val;
+                    }
+                    // Sync to current state
+                    state.inputValues[id] = val;
+                }
             }
         });
 
+        // Restore Settings UI (Redundant for inputs covered above, but ensures selects/color inputs are caught if ID didn't match inputValues key somehow, though it should)
         setVal('qr-error', state.settings.errorCorrection);
         setVal('color-fg', state.settings.colorFg);
         setVal('color-bg', state.settings.colorBg);
@@ -637,11 +661,33 @@ document.addEventListener('DOMContentLoaded', () => {
         setVal('qr-padding', state.settings.padding); 
         setVal('qr-size', state.settings.moduleSize);
 
+        if (state.settings.labelTop) {
+            setVal('label-top-text', state.settings.labelTop.text);
+            setVal('label-top-align', state.settings.labelTop.align);
+            setVal('label-top-color', state.settings.labelTop.color);
+            setVal('label-top-font', state.settings.labelTop.font);
+        }
+        
+        if (state.settings.labelBottom) {
+            setVal('label-bottom-text', state.settings.labelBottom.text);
+            setVal('label-bottom-align', state.settings.labelBottom.align);
+            setVal('label-bottom-color', state.settings.labelBottom.color);
+            setVal('label-bottom-font', state.settings.labelBottom.font);
+        }
+
+        // Switch Tab
         const tabBtn = document.querySelector(`.tab-btn[data-tab="${state.activeTab}"]`);
         if (tabBtn) tabBtn.click();
         
-        if (state.activeTab !== 'raw') updateDataFromInputs();
+        // Regenerate Data and QR
+        if (state.activeTab !== 'raw') {
+            updateDataFromInputs();
+        } else {
+            // For Raw tab, we must ensure state.data is set from the restored textarea
+            state.data = document.getElementById('raw-data').value;
+        }
         updateQR();
+        saveToLocalStorage(); // Persist the restored state immediately
     }
 
     function setVal(id, val) {
