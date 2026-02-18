@@ -29,42 +29,907 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize
     init();
 
-    function init() {
-        // Set defaults in inputs
-        document.getElementById('wifi-ssid').value = 'Krets-Guest';
-        document.getElementById('label-top-text').value = 'SCAN ME';
-        state.settings.labelTop.text = 'SCAN ME'; // Sync initial state
+        function init() {
 
-        setupTabs();
-        setupInputs();
-        updateDataFromInputs(); // This will set state.data and raw-data textarea
-        updateQR(); // Initial render
-    }
+            // Set defaults in inputs
 
+            document.getElementById('wifi-ssid').value = 'Krets-Guest';
 
-    // --- Tab Logic ---
-    function setupTabs() {
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = btn.dataset.tab;
-                state.activeTab = target;
+            document.getElementById('label-top-text').value = 'SCAN ME';
 
-                // UI Update
-                tabBtns.forEach(b => b.classList.remove('active'));
-                tabPanes.forEach(p => p.classList.remove('active'));
-                
-                btn.classList.add('active');
-                document.getElementById(`tab-${target}`).classList.add('active');
+            state.settings.labelTop.text = 'SCAN ME'; // Sync initial state
 
-                // Sync Raw data when switching
-                if (target !== 'raw') {
-                    updateDataFromInputs();
-                }
-                
-                updateQR();
+    
+
+            setupTabs();
+
+            setupInputs();
+
+            setupScanner();
+
+            updateDataFromInputs(); // This will set state.data and raw-data textarea
+
+            updateQR(); // Initial render
+
+        }
+
+    
+
+        // --- Tab Logic ---
+
+        function setupTabs() {
+
+            tabBtns.forEach(btn => {
+
+                btn.addEventListener('click', () => {
+
+                    const target = btn.dataset.tab;
+
+                    state.activeTab = target;
+
+    
+
+                    // UI Update
+
+                    tabBtns.forEach(b => b.classList.remove('active'));
+
+                    tabPanes.forEach(p => p.classList.remove('active'));
+
+                    
+
+                    btn.classList.add('active');
+
+                    document.getElementById(`tab-${target}`).classList.add('active');
+
+    
+
+                    // Sync Raw data when switching
+
+                    if (target !== 'raw' && target !== 'scanner') {
+
+                        updateDataFromInputs();
+
+                    }
+
+                    
+
+                    if (target !== 'scanner') {
+
+                        updateQR();
+
+                    }
+
+                });
+
             });
-        });
-    }
+
+        }
+
+    
+
+        // ... setupInputs exists below ...
+
+    
+
+        // --- Scanner Logic ---
+
+        function setupScanner() {
+
+            const dropZone = document.getElementById('drop-zone');
+
+            const fileInput = document.getElementById('qr-input-file');
+
+            const resultArea = document.getElementById('scanner-result');
+
+            const decodedText = document.getElementById('decoded-text');
+
+            const copyBtn = document.getElementById('copy-decoded');
+
+    
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+    
+
+            dropZone.addEventListener('dragover', (e) => {
+
+                e.preventDefault();
+
+                dropZone.classList.add('dragover');
+
+            });
+
+    
+
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+    
+
+            dropZone.addEventListener('drop', (e) => {
+
+                e.preventDefault();
+
+                dropZone.classList.remove('dragover');
+
+                const files = e.dataTransfer.files;
+
+                if (files.length > 0) handleScannerFile(files[0]);
+
+            });
+
+    
+
+            fileInput.addEventListener('change', (e) => {
+
+                if (e.target.files.length > 0) handleScannerFile(e.target.files[0]);
+
+            });
+
+    
+
+            copyBtn.addEventListener('click', () => {
+
+                decodedText.select();
+
+                document.execCommand('copy');
+
+                copyBtn.textContent = 'Copied!';
+
+                setTimeout(() => copyBtn.textContent = 'Copy to Clipboard', 2000);
+
+            });
+
+        }
+
+    
+
+                    function handleScannerFile(file) {
+
+    
+
+                        const reader = new FileReader();
+
+    
+
+                        reader.onload = (e) => {
+
+    
+
+                            const img = new Image();
+
+    
+
+                            img.onload = () => {
+
+    
+
+                                const canvas = document.createElement('canvas');
+
+    
+
+                                const ctx = canvas.getContext('2d');
+
+    
+
+                                canvas.width = img.width;
+
+    
+
+                                canvas.height = img.height;
+
+    
+
+                                
+
+    
+
+                                // Fix: Fill with white first to handle transparent PNGs
+
+    
+
+                                ctx.fillStyle = '#FFFFFF';
+
+    
+
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    
+
+                
+
+    
+
+                                ctx.drawImage(img, 0, 0);
+
+    
+
+                                
+
+    
+
+                                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    
+
+                                
+
+    
+
+                                if (typeof jsQR === 'undefined') {
+
+    
+
+                                    alert('QR Decoder library not loaded yet. Please try again in a moment.');
+
+    
+
+                                    return;
+
+    
+
+                                }
+
+    
+
+                
+
+    
+
+                                let code = jsQR(imageData.data, imageData.width, imageData.height);
+
+    
+
+                                
+
+    
+
+                                if (!code) {
+
+    
+
+                                    for (let i = 0; i < imageData.data.length; i += 4) {
+
+    
+
+                                        imageData.data[i] = 255 - imageData.data[i];
+
+    
+
+                                        imageData.data[i+1] = 255 - imageData.data[i+1];
+
+    
+
+                                        imageData.data[i+2] = 255 - imageData.data[i+2];
+
+    
+
+                                    }
+
+    
+
+                                    code = jsQR(imageData.data, imageData.width, imageData.height);
+
+    
+
+                                }
+
+    
+
+                
+
+    
+
+                                const resultArea = document.getElementById('scanner-result');
+
+    
+
+                                const decodedText = document.getElementById('decoded-text');
+
+    
+
+                
+
+    
+
+                                // Try to load App State first (for editing)
+
+    
+
+                                readPNGMetadata(file, "App-State").then(jsonState => {
+
+    
+
+                                    if (jsonState) {
+
+    
+
+                                        try {
+
+    
+
+                                            const loadedState = JSON.parse(jsonState);
+
+    
+
+                                            restoreState(loadedState);
+
+    
+
+                                            alert("QR Styling and Data restored! You can now edit this QR code.");
+
+    
+
+                                            return; // Stop here, we are in edit mode now
+
+    
+
+                                        } catch (e) {
+
+    
+
+                                            console.error("Failed to parse App-State", e);
+
+    
+
+                                        }
+
+    
+
+                                    }
+
+    
+
+                
+
+    
+
+                                    // Fallback to standard decode
+
+    
+
+                                    if (code) {
+
+    
+
+                                        resultArea.style.display = 'block';
+
+    
+
+                                        decodedText.value = code.data;
+
+    
+
+                                    } else {
+
+    
+
+                                        // Fallback to Raw Data metadata
+
+    
+
+                                        readPNGMetadata(file, "Description").then(desc => {
+
+    
+
+                                            if (desc) {
+
+    
+
+                                                resultArea.style.display = 'block';
+
+    
+
+                                                decodedText.value = desc + " (Recovered from file metadata)";
+
+    
+
+                                            } else {
+
+    
+
+                                                alert("Could not find a QR code in this image.");
+
+    
+
+                                            }
+
+    
+
+                                        });
+
+    
+
+                                    }
+
+    
+
+                                });
+
+    
+
+                            };
+
+    
+
+                            img.src = e.target.result;
+
+    
+
+                        };
+
+    
+
+                        reader.readAsDataURL(file);
+
+    
+
+                    }
+
+    
+
+            
+
+    
+
+                    function readPNGMetadata(file, keyToFind) {
+
+    
+
+            
+
+    
+
+                        return new Promise((resolve, reject) => {
+
+    
+
+            
+
+    
+
+                            if (file.type !== 'image/png') {
+
+    
+
+            
+
+    
+
+                                resolve(null);
+
+    
+
+            
+
+    
+
+                                return;
+
+    
+
+            
+
+    
+
+                            }
+
+    
+
+            
+
+    
+
+                            
+
+    
+
+            
+
+    
+
+                            const reader = new FileReader();
+
+    
+
+            
+
+    
+
+                            reader.onload = (e) => {
+
+    
+
+            
+
+    
+
+                                try {
+
+    
+
+            
+
+    
+
+                                    const view = new DataView(e.target.result);
+
+    
+
+            
+
+    
+
+                                    // Check PNG Signature
+
+    
+
+            
+
+    
+
+                                    if (view.getUint32(0) !== 0x89504e47 || view.getUint32(4) !== 0x0d0a1a0a) {
+
+    
+
+            
+
+    
+
+                                        resolve(null);
+
+    
+
+            
+
+    
+
+                                        return;
+
+    
+
+            
+
+    
+
+                                    }
+
+    
+
+            
+
+    
+
+                
+
+    
+
+            
+
+    
+
+                                    let offset = 8;
+
+    
+
+            
+
+    
+
+                                    while (offset < view.byteLength) {
+
+    
+
+            
+
+    
+
+                                        const length = view.getUint32(offset);
+
+    
+
+            
+
+    
+
+                                        const type = new TextDecoder().decode(new Uint8Array(e.target.result, offset + 4, 4));
+
+    
+
+            
+
+    
+
+                                        
+
+    
+
+            
+
+    
+
+                                        if (type === 'tEXt') {
+
+    
+
+            
+
+    
+
+                                            const dataStart = offset + 8;
+
+    
+
+            
+
+    
+
+                                            const dataEnd = dataStart + length;
+
+    
+
+            
+
+    
+
+                                            const data = new Uint8Array(e.target.result, dataStart, length);
+
+    
+
+            
+
+    
+
+                                            
+
+    
+
+            
+
+    
+
+                                            // Split key/value by null separator
+
+    
+
+            
+
+    
+
+                                            let nullIndex = -1;
+
+    
+
+            
+
+    
+
+                                            for (let i = 0; i < data.length; i++) {
+
+    
+
+            
+
+    
+
+                                                if (data[i] === 0) {
+
+    
+
+            
+
+    
+
+                                                    nullIndex = i;
+
+    
+
+            
+
+    
+
+                                                    break;
+
+    
+
+            
+
+    
+
+                                                }
+
+    
+
+            
+
+    
+
+                                            }
+
+    
+
+            
+
+    
+
+                
+
+    
+
+            
+
+    
+
+                                            if (nullIndex !== -1) {
+
+    
+
+            
+
+    
+
+                                                const key = new TextDecoder().decode(data.subarray(0, nullIndex));
+
+    
+
+            
+
+    
+
+                                                const value = new TextDecoder().decode(data.subarray(nullIndex + 1));
+
+    
+
+            
+
+    
+
+                                                
+
+    
+
+            
+
+    
+
+                                                if (key === keyToFind) {
+
+    
+
+            
+
+    
+
+                                                    resolve(value);
+
+    
+
+            
+
+    
+
+                                                    return;
+
+    
+
+            
+
+    
+
+                                                }
+
+    
+
+            
+
+    
+
+                                            }
+
+    
+
+            
+
+    
+
+                                        }
+
+    
+
+            
+
+    
+
+                                        
+
+    
+
+            
+
+    
+
+                                        // Move to next chunk: Length (4) + Type (4) + Data (length) + CRC (4)
+
+    
+
+            
+
+    
+
+                                        offset += 4 + 4 + length + 4;
+
+    
+
+            
+
+    
+
+                                    }
+
+    
+
+            
+
+    
+
+                                    resolve(null);
+
+    
+
+            
+
+    
+
+                                } catch (err) {
+
+    
+
+            
+
+    
+
+                                    resolve(null);
+
+    
+
+            
+
+    
+
+                                }
+
+    
+
+            
+
+    
+
+                            };
+
+    
+
+            
+
+    
+
+                            reader.readAsArrayBuffer(file);
+
+    
+
+            
+
+    
+
+                        });
+
+    
+
+            
+
+    
+
+                    }
+
+    
 
     // --- Input Binding ---
     function setupInputs() {
@@ -407,10 +1272,119 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function exportPNG() {
         const hash = await simpleHash(state.data);
-        const link = document.createElement('a');
-        link.download = `qr_${hash}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        const filename = `qr_${hash}.png`;
+
+        canvas.toBlob(async (blob) => {
+            const appState = JSON.stringify(state);
+            let newBlob = await addMetadataToPNG(blob, "Description", state.data);
+            newBlob = await addMetadataToPNG(newBlob, "App-State", appState);
+            
+            const url = URL.createObjectURL(newBlob);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = url;
+            link.click();
+            
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        }, 'image/png');
+    }
+
+    async function addMetadataToPNG(blob, key, text) {
+        const buffer = await blob.arrayBuffer();
+        const data = new Uint8Array(buffer);
+        
+        // Helper to create a chunk
+        // Chunk Structure: Length (4 bytes) + Type (4 bytes) + Data (N bytes) + CRC (4 bytes)
+        
+        const keyEncoded = new TextEncoder().encode(key);
+        const textEncoded = new TextEncoder().encode(text);
+        const chunkData = new Uint8Array(keyEncoded.length + 1 + textEncoded.length);
+        
+        chunkData.set(keyEncoded, 0);
+        chunkData[keyEncoded.length] = 0; // Null separator
+        chunkData.set(textEncoded, keyEncoded.length + 1);
+        
+        const length = chunkData.length;
+        const type = "tEXt";
+        const typeEncoded = new TextEncoder().encode(type);
+        
+        // CRC Calculation Table
+        const crcTable = [];
+        for (let n = 0; n < 256; n++) {
+            let c = n;
+            for (let k = 0; k < 8; k++) {
+                if (c & 1) c = 0xedb88320 ^ (c >>> 1);
+                else c = c >>> 1;
+            }
+            crcTable[n] = c;
+        }
+        
+        function updateCrc(crc, buf) {
+            let c = crc;
+            for (let n = 0; n < buf.length; n++) {
+                c = crcTable[(c ^ buf[n]) & 0xff] ^ (c >>> 8);
+            }
+            return c;
+        }
+        
+        // Calculate CRC for Type + Data
+        let crc = updateCrc(0xffffffff, typeEncoded);
+        crc = updateCrc(crc, chunkData);
+        crc = crc ^ 0xffffffff;
+        
+        // Construct the full chunk
+        const fullChunkLength = 4 + 4 + length + 4;
+        const fullChunk = new Uint8Array(fullChunkLength);
+        const view = new DataView(fullChunk.buffer);
+        
+        view.setUint32(0, length, false); // Length
+        fullChunk.set(typeEncoded, 4);    // Type
+        fullChunk.set(chunkData, 8);      // Data
+        view.setUint32(8 + length, crc, false); // CRC
+
+        // Insert after IHDR (first chunk, usually ends at byte 33 for standard PNGs)
+        const finalData = new Uint8Array(data.length + fullChunkLength);
+        finalData.set(data.subarray(0, 33), 0);
+        finalData.set(fullChunk, 33);
+        finalData.set(data.subarray(33), 33 + fullChunkLength);
+        
+        return new Blob([finalData], { type: 'image/png' });
+    }
+
+    function restoreState(loadedState) {
+        // 1. Update global state
+        state.activeTab = loadedState.activeTab || 'raw';
+        state.data = loadedState.data || '';
+        state.settings = { ...state.settings, ...loadedState.settings };
+
+        // 2. Restore UI Inputs
+        setVal('qr-error', state.settings.errorCorrection);
+        setVal('color-fg', state.settings.colorFg);
+        setVal('color-bg', state.settings.colorBg);
+        setVal('shape-module', state.settings.shapeModule);
+        setVal('shape-finder', state.settings.shapeFinder);
+
+        setVal('label-top-text', state.settings.labelTop.text);
+        setVal('label-top-align', state.settings.labelTop.align);
+        setVal('label-top-color', state.settings.labelTop.color);
+        setVal('label-top-font', state.settings.labelTop.font);
+        
+        setVal('label-bottom-text', state.settings.labelBottom.text);
+        setVal('label-bottom-align', state.settings.labelBottom.align);
+        setVal('label-bottom-color', state.settings.labelBottom.color);
+        setVal('label-bottom-font', state.settings.labelBottom.font);
+
+        document.getElementById('raw-data').value = state.data;
+        
+        const tabBtn = document.querySelector(`.tab-btn[data-tab="${state.activeTab}"]`);
+        if (tabBtn) tabBtn.click();
+        
+        updateQR();
+    }
+
+    function setVal(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
     }
 
     async function simpleHash(str) {

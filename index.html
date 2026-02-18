@@ -7,13 +7,15 @@
     <link rel="stylesheet" href="style.css">
     <!-- qrcode-generator library for matrix calculation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <!-- jsQR library for decoding -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar: Controls -->
         <aside class="sidebar">
             <header>
-                <h1>QR Generator</h1>
+                <h1>QR Tool</h1>
                 <p class="subtitle">qr.krets.com</p>
             </header>
 
@@ -24,9 +26,23 @@
                     <button class="tab-btn" data-tab="url">URL</button>
                     <button class="tab-btn" data-tab="vcard">vCard</button>
                     <button class="tab-btn" data-tab="raw">Raw</button>
+                    <button class="tab-btn" data-tab="scanner">Scanner</button>
                 </div>
 
                 <div class="tab-content">
+                    <!-- ... existing tabs ... -->
+                    <div id="tab-scanner" class="tab-pane">
+                        <div class="scanner-upload-zone" id="drop-zone">
+                            <p>Drag & Drop QR Image<br>or click to upload</p>
+                            <input type="file" id="qr-input-file" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="scanner-result" class="scanner-result" style="display: none;">
+                            <label>Decoded Content:</label>
+                            <textarea id="decoded-text" readonly rows="8"></textarea>
+                            <button id="copy-decoded" class="secondary-btn">Copy to Clipboard</button>
+                        </div>
+                    </div>
+
                     <!-- WiFi Tab -->
                     <div id="tab-wifi" class="tab-pane active">
                         <div class="field">
