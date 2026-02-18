@@ -11,12 +11,249 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- LEFT PANEL: Preview & Visual Settings -->
+        <!-- LEFT PANEL: Title, Data Forms, Footer -->
         <aside class="left-panel">
             <header>
                 <h1>qr.krets.com</h1>
             </header>
 
+            <section class="controls-section">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="vcard">vCard</button>
+                    <button class="tab-btn" data-tab="url">URL</button>
+                    <button class="tab-btn" data-tab="wifi">Wi-Fi</button>
+                    <button class="tab-btn" data-tab="raw">Raw</button>
+                    <button class="tab-btn" data-tab="scanner">Scanner</button>
+                </div>
+
+                <div class="tab-content">
+                    <!-- vCard Tab -->
+                    <div id="tab-vcard" class="tab-pane active">
+                        
+                        <!-- Name Group (Special Logic) -->
+                        <div class="vcard-group" id="group-name">
+                            <div class="group-header" title="Toggle visibility">Name</div>
+                            <div class="group-content">
+                                <div class="name-row-container" id="name-container">
+                                    <!-- Hidden Inputs Helpers (UI) -->
+                                    <div id="name-ui-overlay" class="name-ui-overlay"></div>
+
+                                    <!-- Prefix -->
+                                    <div class="name-field-wrapper hidden" id="wrap-prefix">
+                                        <input type="text" id="vc-prefix" placeholder="Prefix">
+                                    </div>
+                                    
+                                    <!-- First Name (Always Visible) -->
+                                    <div class="name-field-wrapper" id="wrap-fn">
+                                        <input type="text" id="vc-fn" placeholder="First Name">
+                                    </div>
+
+                                    <!-- Middle Name -->
+                                    <div class="name-field-wrapper hidden" id="wrap-mn">
+                                        <input type="text" id="vc-mn" placeholder="Middle">
+                                    </div>
+
+                                    <!-- Last Name (Always Visible) -->
+                                    <div class="name-field-wrapper" id="wrap-ln">
+                                        <input type="text" id="vc-ln" placeholder="Last Name">
+                                    </div>
+
+                                    <!-- Suffix -->
+                                    <div class="name-field-wrapper hidden" id="wrap-suffix">
+                                        <input type="text" id="vc-suffix" placeholder="Suffix">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Nickname Group -->
+                        <div class="vcard-group collapsed">
+                            <div class="group-header">Nickname</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <input type="text" id="vc-nickname" placeholder="Nickname">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Role/Org Group -->
+                        <div class="vcard-group collapsed">
+                            <div class="group-header">Title & Organization</div>
+                            <div class="group-content">
+                                <div class="field-row">
+                                    <div class="field" style="flex: 1;">
+                                        <input type="text" id="vc-title" placeholder="Job Title / Role">
+                                    </div>
+                                    <div class="field" style="flex: 2;">
+                                        <input type="text" id="vc-org" placeholder="Company / Organization">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Group -->
+                        <div class="vcard-group">
+                            <div class="group-header">Email</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <input type="email" id="vc-email" placeholder="example@email.com">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Phone Group -->
+                        <div class="vcard-group">
+                            <div class="group-header">Mobile Phone</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <input type="tel" id="vc-tel-m" placeholder="+1 234 567 8900">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Work Phone Group -->
+                        <div class="vcard-group collapsed">
+                            <div class="group-header">Work Phone</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <input type="tel" id="vc-tel-w" placeholder="Work Phone">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fax Group -->
+                        <div class="vcard-group collapsed">
+                            <div class="group-header">Fax</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <input type="tel" id="vc-fax" placeholder="Fax Number">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- URL Group -->
+                        <div class="vcard-group collapsed">
+                            <div class="group-header">URL</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <input type="url" id="vc-web" placeholder="https://your-website.com">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Address Group -->
+                        <div class="vcard-group collapsed">
+                            <div class="group-header">Address</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <label for="vc-adr" style="font-size: 0.75rem;">Street</label>
+                                    <input type="text" id="vc-adr">
+                                </div>
+                                <div class="field-row compact-gap">
+                                    <div class="field" style="flex: 1;">
+                                        <label for="vc-zip" style="font-size: 0.75rem;">Zip</label>
+                                        <input type="text" id="vc-zip">
+                                    </div>
+                                    <div class="field" style="flex: 2;">
+                                        <label for="vc-city" style="font-size: 0.75rem;">City</label>
+                                        <input type="text" id="vc-city">
+                                    </div>
+                                </div>
+                                <div class="field-row compact-gap">
+                                    <div class="field" style="flex: 1;">
+                                        <label for="vc-state" style="font-size: 0.75rem;">State</label>
+                                        <input type="text" id="vc-state">
+                                    </div>
+                                    <div class="field" style="flex: 1;">
+                                        <label for="vc-country" style="font-size: 0.75rem;">Country</label>
+                                        <input type="text" id="vc-country">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Birthday Group -->
+                        <div class="vcard-group collapsed">
+                            <div class="group-header">Birthday</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <input type="date" id="vc-bday">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Tab -->
+                    <div id="tab-url" class="tab-pane">
+                        <div class="field">
+                            <label for="url-input">Website URL</label>
+                            <input type="url" id="url-input" placeholder="https://qr.krets.com">
+                        </div>
+                    </div>
+
+                    <!-- Wi-Fi Tab -->
+                    <div id="tab-wifi" class="tab-pane">
+                        <div class="field-row">
+                            <div class="field" style="flex: 3;">
+                                <label for="wifi-ssid">Network Name (SSID)</label>
+                                <input type="text" id="wifi-ssid" placeholder="BER Airport Free Airport Wi-Fi">
+                            </div>
+                            <div class="field checkbox-field" style="flex: 1;">
+                                <label>
+                                    <input type="checkbox" id="wifi-hidden"> Hidden
+                                </label>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field" style="flex: 2;">
+                                <label for="wifi-pass">Password</label>
+                                <input type="password" id="wifi-pass">
+                            </div>
+                            <div class="field" style="flex: 1;">
+                                <label for="wifi-enc">Type</label>
+                                <select id="wifi-enc">
+                                    <option value="WPA">WPA</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">None</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Raw Tab -->
+                    <div id="tab-raw" class="tab-pane">
+                        <div class="field">
+                            <label for="raw-data">Raw Data Content</label>
+                            <textarea id="raw-data" rows="8"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Scanner Tab -->
+                    <div id="tab-scanner" class="tab-pane">
+                        <div class="scanner-upload-zone" id="drop-zone">
+                            <p><strong>Drag & Drop QR Image</strong><br>or click to upload</p>
+                            <p style="margin-top: 1rem; font-size: 0.75rem; line-height: 1.4; color: var(--muted-text);">
+                                Images generated by this site store style choices in metadata. 
+                                Settings will be restored if you upload an original image file.
+                            </p>
+                            <input type="file" id="qr-input-file" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="scanner-result" class="scanner-result" style="display: none;">
+                            <label>Decoded Content:</label>
+                            <textarea id="decoded-text" readonly rows="8"></textarea>
+                            <button id="copy-decoded" class="secondary-btn">Copy to Clipboard</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer style="margin-top: auto; font-size: 0.75rem; color: var(--muted-text); text-align: center; padding-top: 2rem;">
+                <p>See a bug or just want to chat? Submit a request via <a href="https://github.com/krets/qr/issues" target="_blank" style="color: inherit; text-decoration: underline;">GitHub Issues</a>.</p>
+            </footer>
+        </aside>
+
+        <!-- RIGHT PANEL: Preview & Visual Settings -->
+        <main class="right-panel">
             <div class="canvas-wrapper">
                 <canvas id="qr-canvas"></canvas>
             </div>
@@ -122,180 +359,6 @@
                                 <option value="right">Right</option>
                             </select>
                             <input type="text" id="label-bottom-font" list="font-list" placeholder="Font" value="sans-serif" class="font-input">
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <footer style="margin-top: 2rem; font-size: 0.75rem; color: var(--muted-text); text-align: center;">
-                <p>See a bug or just want to chat? Submit a request via <a href="https://github.com/krets/qr/issues" target="_blank" style="color: inherit; text-decoration: underline;">GitHub Issues</a>.</p>
-            </footer>
-        </aside>
-
-        <!-- RIGHT PANEL: Data Forms -->
-        <main class="right-panel">
-            <section class="controls-section">
-                <div class="tabs">
-                    <button class="tab-btn active" data-tab="wifi">Wi-Fi</button>
-                    <button class="tab-btn" data-tab="url">URL</button>
-                    <button class="tab-btn" data-tab="vcard">vCard</button>
-                    <button class="tab-btn" data-tab="raw">Raw</button>
-                    <button class="tab-btn" data-tab="scanner">Scanner</button>
-                </div>
-
-                <div class="tab-content">
-                    <!-- Wi-Fi Tab -->
-                    <div id="tab-wifi" class="tab-pane active">
-                        <div class="field-row">
-                            <div class="field" style="flex: 3;">
-                                <label for="wifi-ssid">Network Name (SSID)</label>
-                                <input type="text" id="wifi-ssid" placeholder="BER Airport Free Airport Wi-Fi">
-                            </div>
-                            <div class="field checkbox-field" style="flex: 1;">
-                                <label>
-                                    <input type="checkbox" id="wifi-hidden"> Hidden
-                                </label>
-                            </div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field" style="flex: 2;">
-                                <label for="wifi-pass">Password</label>
-                                <input type="password" id="wifi-pass">
-                            </div>
-                            <div class="field" style="flex: 1;">
-                                <label for="wifi-enc">Type</label>
-                                <select id="wifi-enc">
-                                    <option value="WPA">WPA</option>
-                                    <option value="WEP">WEP</option>
-                                    <option value="nopass">None</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- URL Tab -->
-                    <div id="tab-url" class="tab-pane">
-                        <div class="field">
-                            <label for="url-input">Website URL</label>
-                            <input type="url" id="url-input" placeholder="https://qr.krets.com">
-                        </div>
-                    </div>
-
-                    <!-- vCard Tab -->
-                    <div id="tab-vcard" class="tab-pane">
-                        <!-- Name Row -->
-                        <label>Name</label>
-                        <div class="field-row compact-gap">
-                            <div class="field" style="flex: 0.7;">
-                                <input type="text" id="vc-prefix" placeholder="Prefix">
-                            </div>
-                            <div class="field" style="flex: 2;">
-                                <input type="text" id="vc-fn" placeholder="First">
-                            </div>
-                            <div class="field" style="flex: 1.5;">
-                                <input type="text" id="vc-mn" placeholder="Middle">
-                            </div>
-                            <div class="field" style="flex: 2;">
-                                <input type="text" id="vc-ln" placeholder="Last">
-                            </div>
-                            <div class="field" style="flex: 0.7;">
-                                <input type="text" id="vc-suffix" placeholder="Suffix">
-                            </div>
-                        </div>
-
-                        <div class="field">
-                            <label for="vc-nickname">Nickname</label>
-                            <input type="text" id="vc-nickname">
-                        </div>
-
-                        <div class="field-row">
-                            <div class="field" style="flex: 1;">
-                                <label for="vc-title">Role/Title</label>
-                                <input type="text" id="vc-title">
-                            </div>
-                            <div class="field" style="flex: 2;">
-                                <label for="vc-org">Organization</label>
-                                <input type="text" id="vc-org">
-                            </div>
-                        </div>
-
-                        <div class="field">
-                            <label for="vc-email">Email</label>
-                            <input type="email" id="vc-email">
-                        </div>
-
-                        <div class="field">
-                            <label for="vc-tel-m">Mobile Phone</label>
-                            <input type="tel" id="vc-tel-m">
-                        </div>
-
-                        <div class="field">
-                            <label for="vc-tel-w">Work Phone</label>
-                            <input type="tel" id="vc-tel-w">
-                        </div>
-
-                        <div class="field">
-                            <label for="vc-fax">Fax</label>
-                            <input type="tel" id="vc-fax">
-                        </div>
-
-                        <div class="field">
-                            <label for="vc-web">URL</label>
-                            <input type="url" id="vc-web" placeholder="https://">
-                        </div>
-                        
-                        <h4>Address</h4>
-                        <div class="field">
-                            <label for="vc-adr">Street Address</label>
-                            <input type="text" id="vc-adr">
-                        </div>
-                        <div class="field-row compact-gap">
-                            <div class="field" style="flex: 1;">
-                                <label for="vc-zip">Zip</label>
-                                <input type="text" id="vc-zip">
-                            </div>
-                            <div class="field" style="flex: 2;">
-                                <label for="vc-city">City</label>
-                                <input type="text" id="vc-city">
-                            </div>
-                            <div class="field" style="flex: 1;">
-                                <label for="vc-state">State</label>
-                                <input type="text" id="vc-state">
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label for="vc-country">Country</label>
-                            <input type="text" id="vc-country">
-                        </div>
-
-                        <div class="field" style="margin-top: 1rem;">
-                            <label for="vc-bday">Birthday</label>
-                            <input type="date" id="vc-bday">
-                        </div>
-                    </div>
-
-                    <!-- Raw Tab -->
-                    <div id="tab-raw" class="tab-pane">
-                        <div class="field">
-                            <label for="raw-data">Raw Data Content</label>
-                            <textarea id="raw-data" rows="8"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Scanner Tab -->
-                    <div id="tab-scanner" class="tab-pane">
-                        <div class="scanner-upload-zone" id="drop-zone">
-                            <p><strong>Drag & Drop QR Image</strong><br>or click to upload</p>
-                            <p style="margin-top: 1rem; font-size: 0.75rem; line-height: 1.4; color: var(--muted-text);">
-                                Images generated by this site store style choices in metadata. 
-                                Settings will be restored if you upload an original image file.
-                            </p>
-                            <input type="file" id="qr-input-file" accept="image/*" style="display: none;">
-                        </div>
-                        <div id="scanner-result" class="scanner-result" style="display: none;">
-                            <label>Decoded Content:</label>
-                            <textarea id="decoded-text" readonly rows="8"></textarea>
-                            <button id="copy-decoded" class="secondary-btn">Copy to Clipboard</button>
                         </div>
                     </div>
                 </div>

@@ -50,7 +50,7 @@ body {
 /* === LEFT PANEL (Visuals) === */
 .left-panel {
     width: 45vw;
-    background-color: var(--panel-bg);
+    background-color: var(--bg-color);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -200,7 +200,9 @@ canvas {
 /* === RIGHT PANEL (Data) === */
 .right-panel {
     flex: 1;
-    background-color: var(--bg-color);
+    background-color: var(--panel-bg);
+    display: flex;
+    flex-direction: column;
     padding: 2rem;
     overflow-y: auto;
 }
@@ -250,6 +252,10 @@ canvas {
     margin-bottom: 1rem;
 }
 
+.field-row > .field {
+    margin-bottom: 0;
+}
+
 .field label {
     display: block;
     font-size: 0.875rem;
@@ -265,6 +271,7 @@ canvas {
 .field input[type="tel"],
 .field input[type="date"],
 .field input[type="number"],
+.name-field-wrapper input[type="text"],
 .field select,
 .field textarea {
     width: 100%;
@@ -334,6 +341,122 @@ canvas {
     cursor: pointer;
     font-weight: 600;
     margin-top: 0.5rem;
+}
+
+/* === Collapsible Groups (vCard) === */
+.vcard-group {
+    margin-bottom: 1rem;
+}
+
+.group-header {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem 0;
+    user-select: none;
+    transition: all 0.2s;
+    display: inline-block;
+}
+
+.group-header:hover {
+    opacity: 0.8;
+}
+
+.vcard-group.collapsed {
+    margin-bottom: 0.25rem;
+}
+
+.vcard-group.collapsed .group-header {
+    color: var(--muted-text);
+    font-style: italic;
+    font-size: 0.75rem;
+    padding: 0;
+}
+
+.vcard-group.collapsed .group-header::before {
+    content: '+ ';
+}
+
+/* Remove Icon */
+.group-header::after {
+    display: none;
+}
+
+.group-content {
+    transition: opacity 0.2s;
+    margin-top: 0.25rem;
+}
+
+.vcard-group.collapsed .group-content {
+    display: none;
+}
+
+/* === Name Row Special Logic === */
+.name-row-container {
+    display: flex;
+    gap: 0.5rem;
+    position: relative;
+    align-items: center;
+    padding-top: 2rem; /* Buffer zone for buttons */
+    margin-top: -1.5rem; /* Pull back up so layout looks same */
+}
+
+.name-field-wrapper {
+    flex: 1;
+    position: relative;
+    transition: flex 0.2s;
+}
+
+.name-field-wrapper.hidden {
+    display: none;
+}
+
+/* Adjust flex basis when items are shown to balance layout */
+#wrap-prefix { flex: 0.5; }
+#wrap-suffix { flex: 0.5; }
+#wrap-mn { flex: 0.8; }
+#wrap-fn, #wrap-ln { flex: 1.2; }
+
+/* Name UI Overlay (For Add Buttons) */
+.name-adder-btn {
+    position: absolute;
+    top: 0; /* Inside the padding area */
+    padding: 2px 6px;
+    background-color: var(--accent-color);
+    color: white;
+    font-size: 0.65rem;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 20;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; /* Ignored until active class added */
+}
+
+.name-adder-btn.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.name-divider-line {
+    position: absolute;
+    top: 2rem; /* Start below the padding/button area */
+    bottom: 0;
+    width: 2px;
+    background-color: var(--accent-color);
+    z-index: 19;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.name-divider-line.visible {
+    opacity: 0.5;
 }
 
 /* Mobile Responsive */

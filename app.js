@@ -6,7 +6,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // State management
     const state = {
-        activeTab: 'wifi',
+        activeTab: 'vcard',
         data: '',
         inputValues: {},
         settings: {
@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function init() {
         setupTabs();
         setupInputs();
+        setupVCardUI(); // New UI Logic for vCard
         setupScanner();
         
         // 1. Try to load from LocalStorage
@@ -52,6 +53,170 @@ document.addEventListener('DOMContentLoaded', () => {
             syncAllInputsToState();
             updateDataFromInputs();
             updateQR();
+        }
+    }
+
+    // --- vCard UI Logic ---
+    function setupVCardUI() {
+        // 1. Group Toggling
+        const groups = document.querySelectorAll('.vcard-group');
+        groups.forEach(group => {
+            const header = group.querySelector('.group-header');
+            if (!header) return;
+
+            header.addEventListener('click', () => {
+                group.classList.toggle('collapsed');
+                updateDataFromInputs(); // Re-generate data to include/exclude fields
+                updateQR();
+            });
+        });
+
+        // 2. Name Row "Add Field" Logic
+        const container = document.getElementById('name-container');
+        if (!container) return;
+
+        // Elements
+        const wrapPrefix = document.getElementById('wrap-prefix');
+        const wrapFn = document.getElementById('wrap-fn');
+        const wrapMn = document.getElementById('wrap-mn');
+        const wrapLn = document.getElementById('wrap-ln');
+        const wrapSuffix = document.getElementById('wrap-suffix');
+        const uiOverlay = document.getElementById('name-ui-overlay');
+        let hideTimeout;
+
+        // Create Buttons dynamically
+        const btnPrefix = createAddBtn('Add Prefix', () => showField(wrapPrefix, btnPrefix));
+        const btnMiddle = createAddBtn('Add Middle', () => showField(wrapMn, btnMiddle));
+        const btnSuffix = createAddBtn('Add Suffix', () => showField(wrapSuffix, btnSuffix));
+        const divider = document.createElement('div');
+        divider.className = 'name-divider-line';
+
+        uiOverlay.appendChild(btnPrefix);
+        uiOverlay.appendChild(btnMiddle);
+        uiOverlay.appendChild(btnSuffix);
+        uiOverlay.appendChild(divider);
+
+        // Hover Logic
+        container.addEventListener('mousemove', (e) => {
+            clearTimeout(hideTimeout); // Cancel pending hide
+            
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            
+            // Get positions of visible main fields
+            const rectFn = wrapFn.getBoundingClientRect();
+            const rectLn = wrapLn.getBoundingClientRect();
+
+            // Offsets relative to container
+            const fnLeft = rectFn.left - rect.left;
+            const fnRight = rectFn.right - rect.left;
+            const lnLeft = rectLn.left - rect.left;
+            const lnRight = rectLn.right - rect.left;
+
+            // Reset only if we are moving to a new zone, but let's just recalculate
+            // Actually, we should only hide if we are NOT in a zone
+            let inZone = false;
+
+            // 1. Left of FN -> Prefix
+            if (!isVisible(wrapPrefix) && x >= fnLeft && x <= fnLeft + (rectFn.width * 0.3)) {
+                showAddUI(btnPrefix, divider, fnLeft);
+                inZone = true;
+            }
+            // 2. Right of FN or Left of LN -> Middle
+            else if (!isVisible(wrapMn) && x >= fnRight - (rectFn.width * 0.3) && x <= lnLeft + (rectLn.width * 0.3)) {
+                const midX = (fnRight + lnLeft) / 2;
+                const targetX = (lnLeft - fnRight < 10) ? fnRight : midX;
+                showAddUI(btnMiddle, divider, targetX);
+                inZone = true;
+            }
+            // 3. Right of LN -> Suffix
+            else if (!isVisible(wrapSuffix) && x >= lnRight - (rectLn.width * 0.3) && x <= lnRight) {
+                showAddUI(btnSuffix, divider, lnRight);
+                inZone = true;
+            }
+
+            if (!inZone) {
+                // If not in a trigger zone, we might be moving towards the button
+                // But we don't want to hide immediately if we are ON the button
+                // The button has pointer-events: auto when visible, so it captures mouse events?
+                // Actually, the button is inside uiOverlay inside container, so mousemove bubbles.
+                // We can check if e.target is a button.
+                if (e.target.classList.contains('name-adder-btn')) {
+                    // Do nothing, keep visible
+                } else {
+                    // We are in container but not in zone. Hide after short delay?
+                    // Or hide immediately? User said "mouseout happens before button is touched".
+                    // If we hide immediately here, the user can't reach the button if it's slightly offset.
+                    // But our CSS update put the button inside the padding area which is part of container.
+                    // So mousemove should still fire.
+                    hideAllAddUI(); 
+                }
+            }
+        });
+
+        container.addEventListener('mouseleave', () => {
+            // Delay hiding to allow moving to button if it was somehow outside (it shouldn't be now)
+            // But good for UX anyway
+            hideTimeout = setTimeout(() => {
+                hideAllAddUI();
+            }, 300);
+        });
+        
+        // Also keep visible if hovering the button itself (extra safety if button moves outside)
+        [btnPrefix, btnMiddle, btnSuffix].forEach(btn => {
+             btn.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+             btn.addEventListener('mouseleave', () => {
+                 hideTimeout = setTimeout(() => hideAllAddUI(), 300);
+             });
+        });
+
+        function createAddBtn(text, onClick) {
+            const btn = document.createElement('div');
+            btn.className = 'name-adder-btn';
+            btn.textContent = text;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent trigger from firing again immediately
+                onClick();
+            });
+            return btn;
+        }
+
+        function showField(wrapper, btn) {
+            wrapper.classList.remove('hidden');
+            // Hide specific button UI immediately
+            btn.classList.remove('visible');
+            divider.classList.remove('visible');
+            updateDataFromInputs();
+            updateQR();
+        }
+
+        function isVisible(el) {
+            return !el.classList.contains('hidden');
+        }
+
+        function showAddUI(btn, line, xPos) {
+            // Hide others first
+            [btnPrefix, btnMiddle, btnSuffix].forEach(b => {
+                if (b !== btn) b.classList.remove('visible');
+            });
+            
+            btn.classList.add('visible');
+            line.classList.add('visible');
+            
+            // Position Line
+            line.style.left = `${xPos}px`;
+            
+            // Position Button (Centered above line)
+            btn.style.left = `${xPos}px`;
+            btn.style.transform = `translateX(-50%) translateY(0)`;
+        }
+
+        function hideAllAddUI() {
+            [btnPrefix, btnMiddle, btnSuffix].forEach(b => {
+                b.classList.remove('visible');
+                b.style.transform = `translateX(-50%) translateY(5px)`;
+            });
+            divider.classList.remove('visible');
         }
     }
 
@@ -292,29 +457,45 @@ document.addEventListener('DOMContentLoaded', () => {
             formattedData = url;
 
         } else if (state.activeTab === 'vcard') {
-            const pfx = document.getElementById('vc-prefix').value;
-            const fn = document.getElementById('vc-fn').value;
-            const mn = document.getElementById('vc-mn').value;
-            const ln = document.getElementById('vc-ln').value;
-            const sfx = document.getElementById('vc-suffix').value;
+            // Helper to get value only if visible
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                if (!el) return '';
+                
+                // 1. Check if group is collapsed
+                const group = el.closest('.vcard-group');
+                if (group && group.classList.contains('collapsed')) return '';
+
+                // 2. Check if specific field wrapper is hidden (Name fields)
+                const wrapper = el.closest('.name-field-wrapper');
+                if (wrapper && wrapper.classList.contains('hidden')) return '';
+
+                return el.value;
+            };
+
+            const pfx = getVal('vc-prefix');
+            const fn = getVal('vc-fn');
+            const mn = getVal('vc-mn');
+            const ln = getVal('vc-ln');
+            const sfx = getVal('vc-suffix');
             
-            const nickname = document.getElementById('vc-nickname').value;
-            const org = document.getElementById('vc-org').value;
-            const title = document.getElementById('vc-title').value;
-            const email = document.getElementById('vc-email').value;
+            const nickname = getVal('vc-nickname');
+            const org = getVal('vc-org');
+            const title = getVal('vc-title');
+            const email = getVal('vc-email');
             
-            const telM = document.getElementById('vc-tel-m').value;
-            const telW = document.getElementById('vc-tel-w').value;
-            const fax = document.getElementById('vc-fax').value;
-            const website = document.getElementById('vc-web').value;
+            const telM = getVal('vc-tel-m');
+            const telW = getVal('vc-tel-w');
+            const fax = getVal('vc-fax');
+            const website = getVal('vc-web');
             
-            const adr = document.getElementById('vc-adr').value;
-            const zip = document.getElementById('vc-zip').value;
-            const city = document.getElementById('vc-city').value;
-            const stateCode = document.getElementById('vc-state').value;
-            const country = document.getElementById('vc-country').value;
+            const adr = getVal('vc-adr');
+            const zip = getVal('vc-zip');
+            const city = getVal('vc-city');
+            const stateCode = getVal('vc-state');
+            const country = getVal('vc-country');
             
-            const bday = document.getElementById('vc-bday').value;
+            const bday = getVal('vc-bday');
 
             const hasName = pfx || fn || mn || ln || sfx;
             const nStr = hasName ? `N:${ln};${fn};${mn};${pfx};${sfx}` : '';
@@ -648,6 +829,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     // Sync to current state
                     state.inputValues[id] = val;
+
+                    // UI Logic: Auto-expand groups and unhide name fields if they have content
+                    if (val && val.toString().trim() !== '') {
+                        // 1. Unhide Name Fields
+                        const wrapper = el.closest('.name-field-wrapper');
+                        if (wrapper && wrapper.classList.contains('hidden')) {
+                            wrapper.classList.remove('hidden');
+                        }
+
+                        // 2. Expand Groups
+                        const group = el.closest('.vcard-group');
+                        if (group && group.classList.contains('collapsed')) {
+                            group.classList.remove('collapsed');
+                        }
+                    }
                 }
             }
         });
