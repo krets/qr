@@ -5,34 +5,133 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator | qr.krets.com</title>
     <link rel="stylesheet" href="style.css">
-    <!-- qrcode-generator library for matrix calculation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
-    <!-- jsQR library for decoding -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- Main Content: Preview (Now on Left) -->
-        <main class="preview-area">
+        <!-- LEFT PANEL: Preview & Visual Settings -->
+        <aside class="left-panel">
+            <header>
+                <h1>qr.krets.com</h1>
+            </header>
+
             <div class="canvas-wrapper">
                 <canvas id="qr-canvas"></canvas>
             </div>
+            
             <div class="actions">
                 <button id="download-btn" class="primary-btn">Download PNG</button>
             </div>
-        </main>
 
-        <!-- Sidebar: Controls (Now on Right) -->
-        <aside class="sidebar">
-            <header>
-                <h1>QR Tool</h1>
-                <p class="subtitle">qr.krets.com</p>
-            </header>
+            <!-- Visual Settings Group -->
+            <section class="visual-settings">
+                
+                <!-- Appearance Group -->
+                <div class="settings-group">
+                    <h3>Appearance</h3>
+                    
+                    <!-- Row 1: Colors, Padding, Size -->
+                    <div class="field-row compact-row" style="align-items: flex-end;">
+                        <div class="field" style="flex: 0 0 auto;">
+                            <label for="color-fg">Color</label>
+                            <input type="color" id="color-fg" class="square-color-input" value="#000000" title="Foreground">
+                        </div>
+                        <div class="field" style="flex: 0 0 auto;">
+                            <label for="color-bg">BG</label>
+                            <input type="color" id="color-bg" class="square-color-input" value="#ffffff" title="Background">
+                        </div>
+                        <div class="field">
+                            <label for="qr-padding">Padding</label>
+                            <input type="number" id="qr-padding" value="0" min="0" step="4" style="width: 60px;">
+                        </div>
+                        <div class="field">
+                            <label for="qr-size">Size</label>
+                            <input type="number" id="qr-size" value="15" min="1" max="50" style="width: 60px;">
+                        </div>
+                    </div>
 
-            <!-- Data Tabs -->
+                    <!-- Row 2: Shapes & Correction -->
+                    <div class="field-row compact-row">
+                        <div class="field">
+                            <label for="shape-finder">Finder</label>
+                            <select id="shape-finder">
+                                <option value="square">Square</option>
+                                <option value="dots">Circle</option>
+                                <option value="rounded">Rounded</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="shape-module">Module</label>
+                            <select id="shape-module">
+                                <option value="square">Square</option>
+                                <option value="dots">Dots</option>
+                                <option value="rounded">Rounded</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="qr-error">Correction</label>
+                            <select id="qr-error">
+                                <option value="L">Low (7%)</option>
+                                <option value="M" selected>Med (15%)</option>
+                                <option value="Q">Quart (25%)</option>
+                                <option value="H">High (30%)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Labels Group -->
+                <div class="settings-group">
+                    <h3>Labels</h3>
+                    
+                    <!-- Font Datalist -->
+                    <datalist id="font-list">
+                        <option value="sans-serif">Sans-Serif</option>
+                        <option value="serif">Serif</option>
+                        <option value="monospace">Monospace</option>
+                        <option value="Segoe UI Symbol">Segoe UI Symbol</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Courier New">Courier New</option>
+                    </datalist>
+
+                    <!-- Top Label -->
+                    <div class="label-compact">
+                        <input type="text" id="label-top-text" class="label-text-input" placeholder="Top Label Text">
+                        <div class="label-controls">
+                            <input type="color" id="label-top-color" value="#000000" title="Color">
+                            <select id="label-top-align" title="Alignment">
+                                <option value="center">Center</option>
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                            </select>
+                            <input type="text" id="label-top-font" list="font-list" placeholder="Font" value="sans-serif" class="font-input">
+                        </div>
+                    </div>
+
+                    <!-- Bottom Label -->
+                    <div class="label-compact">
+                        <input type="text" id="label-bottom-text" class="label-text-input" placeholder="Bottom Label Text">
+                        <div class="label-controls">
+                            <input type="color" id="label-bottom-color" value="#000000" title="Color">
+                            <select id="label-bottom-align" title="Alignment">
+                                <option value="center">Center</option>
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                            </select>
+                            <input type="text" id="label-bottom-font" list="font-list" placeholder="Font" value="sans-serif" class="font-input">
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- RIGHT PANEL: Data Forms -->
+        <main class="right-panel">
             <section class="controls-section">
                 <div class="tabs">
-                    <button class="tab-btn active" data-tab="wifi">WiFi</button>
+                    <button class="tab-btn active" data-tab="wifi">Wi-Fi</button>
                     <button class="tab-btn" data-tab="url">URL</button>
                     <button class="tab-btn" data-tab="vcard">vCard</button>
                     <button class="tab-btn" data-tab="raw">Raw</button>
@@ -40,29 +139,31 @@
                 </div>
 
                 <div class="tab-content">
-                    <!-- WiFi Tab -->
+                    <!-- Wi-Fi Tab -->
                     <div id="tab-wifi" class="tab-pane active">
-                        <div class="field">
-                            <label for="wifi-ssid">Network Name (SSID)</label>
-                            <input type="text" id="wifi-ssid" placeholder="My Network">
-                        </div>
-                        <div class="field">
-                            <label for="wifi-pass">Password</label>
-                            <input type="password" id="wifi-pass" placeholder="Network Password">
-                        </div>
                         <div class="field-row">
-                            <div class="field">
-                                <label for="wifi-enc">Encryption</label>
-                                <select id="wifi-enc">
-                                    <option value="WPA">WPA/WPA2</option>
-                                    <option value="WEP">WEP</option>
-                                    <option value="nopass">None</option>
-                                </select>
+                            <div class="field" style="flex: 3;">
+                                <label for="wifi-ssid">Network Name (SSID)</label>
+                                <input type="text" id="wifi-ssid" placeholder="BER Airport Free Airport Wi-Fi">
                             </div>
-                            <div class="field checkbox-field">
+                            <div class="field checkbox-field" style="flex: 1;">
                                 <label>
                                     <input type="checkbox" id="wifi-hidden"> Hidden
                                 </label>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field" style="flex: 2;">
+                                <label for="wifi-pass">Password</label>
+                                <input type="password" id="wifi-pass">
+                            </div>
+                            <div class="field" style="flex: 1;">
+                                <label for="wifi-enc">Type</label>
+                                <select id="wifi-enc">
+                                    <option value="WPA">WPA</option>
+                                    <option value="WEP">WEP</option>
+                                    <option value="nopass">None</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -71,48 +172,70 @@
                     <div id="tab-url" class="tab-pane">
                         <div class="field">
                             <label for="url-input">Website URL</label>
-                            <input type="url" id="url-input" placeholder="https://example.com">
+                            <input type="url" id="url-input" placeholder="https://qr.krets.com">
                         </div>
                     </div>
 
                     <!-- vCard Tab -->
                     <div id="tab-vcard" class="tab-pane">
+                        <!-- Name Row -->
+                        <label>Name</label>
+                        <div class="field-row compact-gap">
+                            <div class="field" style="flex: 0.7;">
+                                <input type="text" id="vc-prefix" placeholder="Prefix">
+                            </div>
+                            <div class="field" style="flex: 2;">
+                                <input type="text" id="vc-fn" placeholder="First">
+                            </div>
+                            <div class="field" style="flex: 1.5;">
+                                <input type="text" id="vc-mn" placeholder="Middle">
+                            </div>
+                            <div class="field" style="flex: 2;">
+                                <input type="text" id="vc-ln" placeholder="Last">
+                            </div>
+                            <div class="field" style="flex: 0.7;">
+                                <input type="text" id="vc-suffix" placeholder="Suffix">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="vc-nickname">Nickname</label>
+                            <input type="text" id="vc-nickname">
+                        </div>
+
                         <div class="field-row">
-                            <div class="field">
-                                <label for="vc-fn">First Name</label>
-                                <input type="text" id="vc-fn">
+                            <div class="field" style="flex: 1;">
+                                <label for="vc-title">Role/Title</label>
+                                <input type="text" id="vc-title">
                             </div>
-                            <div class="field">
-                                <label for="vc-ln">Last Name</label>
-                                <input type="text" id="vc-ln">
+                            <div class="field" style="flex: 2;">
+                                <label for="vc-org">Organization</label>
+                                <input type="text" id="vc-org">
                             </div>
                         </div>
-                        <div class="field">
-                            <label for="vc-org">Organization</label>
-                            <input type="text" id="vc-org">
-                        </div>
-                        <div class="field">
-                            <label for="vc-title">Title/Role</label>
-                            <input type="text" id="vc-title">
-                        </div>
-                        <div class="field">
-                            <label for="vc-bday">Birthday</label>
-                            <input type="date" id="vc-bday">
-                        </div>
-                        <div class="field">
-                            <label for="vc-tel-m">Mobile Phone</label>
-                            <input type="tel" id="vc-tel-m">
-                        </div>
-                        <div class="field">
-                            <label for="vc-tel-w">Work Phone</label>
-                            <input type="tel" id="vc-tel-w">
-                        </div>
+
                         <div class="field">
                             <label for="vc-email">Email</label>
                             <input type="email" id="vc-email">
                         </div>
+
                         <div class="field">
-                            <label for="vc-web">Website</label>
+                            <label for="vc-tel-m">Mobile Phone</label>
+                            <input type="tel" id="vc-tel-m">
+                        </div>
+
+                        <div class="field">
+                            <label for="vc-tel-w">Work Phone</label>
+                            <input type="tel" id="vc-tel-w">
+                        </div>
+
+                        <div class="field">
+                            <label for="vc-fax">Fax</label>
+                            <input type="tel" id="vc-fax">
+                        </div>
+
+                        <div class="field">
+                            <label for="vc-web">URL</label>
                             <input type="url" id="vc-web" placeholder="https://">
                         </div>
                         
@@ -121,25 +244,28 @@
                             <label for="vc-adr">Street Address</label>
                             <input type="text" id="vc-adr">
                         </div>
-                        <div class="field-row">
+                        <div class="field-row compact-gap">
                             <div class="field" style="flex: 1;">
-                                <label for="vc-zip">Zip/Postal Code</label>
+                                <label for="vc-zip">Zip</label>
                                 <input type="text" id="vc-zip">
                             </div>
                             <div class="field" style="flex: 2;">
                                 <label for="vc-city">City</label>
                                 <input type="text" id="vc-city">
                             </div>
-                        </div>
-                        <div class="field-row">
-                            <div class="field">
-                                <label for="vc-state">State/Region</label>
+                            <div class="field" style="flex: 1;">
+                                <label for="vc-state">State</label>
                                 <input type="text" id="vc-state">
                             </div>
-                            <div class="field">
-                                <label for="vc-country">Country</label>
-                                <input type="text" id="vc-country">
-                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="vc-country">Country</label>
+                            <input type="text" id="vc-country">
+                        </div>
+
+                        <div class="field" style="margin-top: 1rem;">
+                            <label for="vc-bday">Birthday</label>
+                            <input type="date" id="vc-bday">
                         </div>
                     </div>
 
@@ -147,14 +273,18 @@
                     <div id="tab-raw" class="tab-pane">
                         <div class="field">
                             <label for="raw-data">Raw Data Content</label>
-                            <textarea id="raw-data" rows="6"></textarea>
+                            <textarea id="raw-data" rows="8"></textarea>
                         </div>
                     </div>
 
                     <!-- Scanner Tab -->
                     <div id="tab-scanner" class="tab-pane">
                         <div class="scanner-upload-zone" id="drop-zone">
-                            <p>Drag & Drop QR Image<br>or click to upload</p>
+                            <p><strong>Drag & Drop QR Image</strong><br>or click to upload</p>
+                            <p style="margin-top: 1rem; font-size: 0.75rem; line-height: 1.4; color: var(--muted-text);">
+                                Images generated by this site store style choices in metadata. 
+                                Settings will be restored if you upload an original image file.
+                            </p>
                             <input type="file" id="qr-input-file" accept="image/*" style="display: none;">
                         </div>
                         <div id="scanner-result" class="scanner-result" style="display: none;">
@@ -165,127 +295,8 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Styling Sidebar -->
-            <section class="controls-section styling-controls">
-                <h3>Global Settings</h3>
-                <div class="field">
-                    <label for="qr-error">Error Correction</label>
-                    <select id="qr-error">
-                        <option value="L">Low (7%)</option>
-                        <option value="M" selected>Medium (15%)</option>
-                        <option value="Q">Quartile (25%)</option>
-                        <option value="H">High (30%)</option>
-                    </select>
-                    <small class="help-text">Medium (15%): Good balance for most digital use.</small>
-                </div>
-
-                <h3>Appearance</h3>
-                <div class="field-row">
-                    <div class="field">
-                        <label for="color-fg">Foreground</label>
-                        <input type="color" id="color-fg" value="#000000">
-                    </div>
-                    <div class="field">
-                        <label for="color-bg">Background</label>
-                        <input type="color" id="color-bg" value="#ffffff">
-                    </div>
-                </div>
-
-                <div class="field-row">
-                    <div class="field">
-                        <label for="shape-module">Module Shape</label>
-                        <select id="shape-module">
-                            <option value="square">Square</option>
-                            <option value="dots">Dots</option>
-                            <option value="rounded">Rounded</option>
-                        </select>
-                    </div>
-                    <div class="field">
-                        <label for="shape-finder">Finder Pattern</label>
-                        <select id="shape-finder">
-                            <option value="square">Square</option>
-                            <option value="dots">Circle</option>
-                            <option value="rounded">Rounded Square</option>
-                        </select>
-                    </div>
-                </div>
-
-                <h3>Labels</h3>
-                
-                <!-- Font Datalist -->
-                <datalist id="font-list">
-                    <option value="sans-serif">Sans-Serif (System)</option>
-                    <option value="serif">Serif (System)</option>
-                    <option value="monospace">Monospace (System)</option>
-                    <option value="Segoe UI Symbol">Segoe UI Symbol</option>
-                    <option value="Arial">Arial</option>
-                    <option value="Verdana">Verdana</option>
-                    <option value="Helvetica">Helvetica</option>
-                    <option value="Tahoma">Tahoma</option>
-                    <option value="Trebuchet MS">Trebuchet MS</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                    <option value="Georgia">Georgia</option>
-                    <option value="Garamond">Garamond</option>
-                    <option value="Courier New">Courier New</option>
-                    <option value="Brush Script MT">Brush Script MT</option>
-                </datalist>
-
-                <!-- Top Label -->
-                <div class="label-group">
-                    <h4>Top Label</h4>
-                    <div class="field">
-                        <input type="text" id="label-top-text" placeholder="Text (e.g. SCAN ME)">
-                    </div>
-                    <div class="field-row">
-                        <div class="field">
-                            <label for="label-top-align">Align</label>
-                            <select id="label-top-align">
-                                <option value="center">Center</option>
-                                <option value="left">Left</option>
-                                <option value="right">Right</option>
-                            </select>
-                        </div>
-                        <div class="field">
-                            <label for="label-top-color">Color</label>
-                            <input type="color" id="label-top-color" value="#000000">
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label for="label-top-font">Font</label>
-                        <input type="text" id="label-top-font" list="font-list" placeholder="Select or type font" value="sans-serif">
-                    </div>
-                </div>
-
-                <!-- Bottom Label -->
-                <div class="label-group" style="margin-top: 1.5rem;">
-                    <h4>Bottom Label</h4>
-                    <div class="field">
-                        <input type="text" id="label-bottom-text" placeholder="Text">
-                    </div>
-                    <div class="field-row">
-                        <div class="field">
-                            <label for="label-bottom-align">Align</label>
-                            <select id="label-bottom-align">
-                                <option value="center">Center</option>
-                                <option value="left">Left</option>
-                                <option value="right">Right</option>
-                            </select>
-                        </div>
-                        <div class="field">
-                            <label for="label-bottom-color">Color</label>
-                            <input type="color" id="label-bottom-color" value="#000000">
-                        </div>
-                    </div>
-                    <div class="field">
-                        <label for="label-bottom-font">Font</label>
-                        <input type="text" id="label-bottom-font" list="font-list" placeholder="Select or type font" value="sans-serif">
-                    </div>
-                </div>
-            </section>
-        </aside>
+        </main>
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
