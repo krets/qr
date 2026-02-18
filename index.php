@@ -1,10 +1,17 @@
+<?php
+$version = '20260218'; // Fallback
+$gitRefPath = '.git/refs/heads/main';
+if (file_exists($gitRefPath)) {
+    $version = trim(file_get_contents($gitRefPath));
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator | qr.krets.com</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?= $version ?>">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -365,6 +372,6 @@
             </section>
         </main>
     </div>
-    <script src="app.js"></script>
+    <script src="app.js?v=<?= $version ?>"></script>
 </body>
 </html>
