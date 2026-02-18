@@ -12,7 +12,17 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar: Controls -->
+        <!-- Main Content: Preview (Now on Left) -->
+        <main class="preview-area">
+            <div class="canvas-wrapper">
+                <canvas id="qr-canvas"></canvas>
+            </div>
+            <div class="actions">
+                <button id="download-btn" class="primary-btn">Download PNG</button>
+            </div>
+        </main>
+
+        <!-- Sidebar: Controls (Now on Right) -->
         <aside class="sidebar">
             <header>
                 <h1>QR Tool</h1>
@@ -30,19 +40,6 @@
                 </div>
 
                 <div class="tab-content">
-                    <!-- ... existing tabs ... -->
-                    <div id="tab-scanner" class="tab-pane">
-                        <div class="scanner-upload-zone" id="drop-zone">
-                            <p>Drag & Drop QR Image<br>or click to upload</p>
-                            <input type="file" id="qr-input-file" accept="image/*" style="display: none;">
-                        </div>
-                        <div id="scanner-result" class="scanner-result" style="display: none;">
-                            <label>Decoded Content:</label>
-                            <textarea id="decoded-text" readonly rows="8"></textarea>
-                            <button id="copy-decoded" class="secondary-btn">Copy to Clipboard</button>
-                        </div>
-                    </div>
-
                     <!-- WiFi Tab -->
                     <div id="tab-wifi" class="tab-pane active">
                         <div class="field">
@@ -153,6 +150,19 @@
                             <textarea id="raw-data" rows="6"></textarea>
                         </div>
                     </div>
+
+                    <!-- Scanner Tab -->
+                    <div id="tab-scanner" class="tab-pane">
+                        <div class="scanner-upload-zone" id="drop-zone">
+                            <p>Drag & Drop QR Image<br>or click to upload</p>
+                            <input type="file" id="qr-input-file" accept="image/*" style="display: none;">
+                        </div>
+                        <div id="scanner-result" class="scanner-result" style="display: none;">
+                            <label>Decoded Content:</label>
+                            <textarea id="decoded-text" readonly rows="8"></textarea>
+                            <button id="copy-decoded" class="secondary-btn">Copy to Clipboard</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -167,7 +177,7 @@
                         <option value="Q">Quartile (25%)</option>
                         <option value="H">High (30%)</option>
                     </select>
-                    <small class="help-text">High recommended for complex styling or print.</small>
+                    <small class="help-text">Medium (15%): Good balance for most digital use.</small>
                 </div>
 
                 <h3>Appearance</h3>
@@ -274,16 +284,6 @@
                 </div>
             </section>
         </aside>
-
-        <!-- Main Content: Preview -->
-        <main class="preview-area">
-            <div class="canvas-wrapper">
-                <canvas id="qr-canvas"></canvas>
-            </div>
-            <div class="actions">
-                <button id="download-btn" class="primary-btn">Download PNG</button>
-            </div>
-        </main>
     </div>
 
     <script src="app.js"></script>

@@ -49,9 +49,9 @@ body {
 
 /* Sidebar Styling */
 .sidebar {
-    width: 400px;
+    width: 55vw;
     background-color: var(--sidebar-bg);
-    border-right: 1px solid var(--border-color);
+    border-left: 1px solid var(--border-color); /* Sidebar is on the right, border on left */
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -183,6 +183,8 @@ header h1 {
     padding: 2rem;
     background-color: var(--bg-color);
     position: relative;
+    /* Ensure preview area doesn't take priority over sidebar width */
+    min-width: 0; 
 }
 
 .canvas-wrapper {
@@ -223,6 +225,11 @@ canvas {
     opacity: 0.9;
 }
 
+.primary-btn:active {
+    transform: scale(0.98);
+}
+
+/* Scanner Styles */
 .scanner-upload-zone {
     border: 2px dashed var(--border-color);
     border-radius: 12px;
@@ -284,6 +291,8 @@ canvas {
     background: var(--accent-color);
     color: white;
 }
+
+/* Mobile Responsive */
 @media (max-width: 900px) {
     .app-container {
         flex-direction: column;
@@ -294,7 +303,7 @@ canvas {
         width: 100%;
         height: auto;
         order: 2;
-        border-right: none;
+        border-left: none; /* Reset desktop border */
         border-top: 1px solid var(--border-color);
     }
 

@@ -4,54 +4,60 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // State management
-    const state = {
-        activeTab: 'wifi',
-        data: '',
-        settings: {
-            errorCorrection: 'M',
-            colorFg: '#000000',
-            colorBg: '#ffffff',
-            shapeModule: 'square',
-            shapeFinder: 'square',
-            labelTop: { text: '', font: 'sans-serif', align: 'center', color: '#000000' },
-            labelBottom: { text: '', font: 'sans-serif', align: 'center', color: '#000000' }
-        }
-    };
-
-    // DOM Elements
-    const canvas = document.getElementById('qr-canvas');
-    const ctx = canvas.getContext('2d');
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabPanes = document.querySelectorAll('.tab-pane');
-    const downloadBtn = document.getElementById('download-btn');
-
-    // Initialize
-    init();
-
-        function init() {
-
-            // Set defaults in inputs
-
-            document.getElementById('wifi-ssid').value = 'Krets-Guest';
-
-            document.getElementById('label-top-text').value = 'SCAN ME';
-
-            state.settings.labelTop.text = 'SCAN ME'; // Sync initial state
-
+        // State management
+        const state = {
+            activeTab: 'wifi',
+            data: '',
+            inputValues: {}, // Store individual field values
+            settings: {
+                errorCorrection: 'M',
+                colorFg: '#000000',
+                colorBg: '#ffffff',
+                shapeModule: 'square',
+                shapeFinder: 'square',
+                labelTop: { text: '', font: 'sans-serif', align: 'center', color: '#000000' },
+                labelBottom: { text: '', font: 'sans-serif', align: 'center', color: '#000000' }
+            }
+        };
     
-
+        // DOM Elements
+        const canvas = document.getElementById('qr-canvas');
+        const ctx = canvas.getContext('2d');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        const downloadBtn = document.getElementById('download-btn');
+    
+        // Initialize
+        init();
+    
+        function init() {
+            // Set defaults in inputs
+            document.getElementById('wifi-ssid').value = 'Krets-Guest';
+    
             setupTabs();
-
             setupInputs();
-
             setupScanner();
-
+            
+            // Initial sync of default values to state
+            syncAllInputsToState();
+            
             updateDataFromInputs(); // This will set state.data and raw-data textarea
-
             updateQR(); // Initial render
-
         }
+    
+        function syncAllInputsToState() {
+            const allInputs = document.querySelectorAll('input, select, textarea');
+            allInputs.forEach(el => {
+                if (el.id) {
+                    if (el.type === 'checkbox') {
+                        state.inputValues[el.id] = el.checked;
+                    } else {
+                        state.inputValues[el.id] = el.value;
+                    }
+                }
+            });
+        }
+    
 
     
 
@@ -933,20 +939,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Input Binding ---
     function setupInputs() {
-        // Data inputs
-        const allDataInputs = document.querySelectorAll('.tab-pane input, .tab-pane select, .tab-pane textarea');
-        allDataInputs.forEach(input => {
-            input.addEventListener('input', debounce(() => {
-                if (state.activeTab !== 'raw') {
-                    updateDataFromInputs();
-                } else {
-                    state.data = document.getElementById('raw-data').value;
+        // Data inputs & Styling Inputs (Unified handling for state sync)
+        const allInputs = document.querySelectorAll('input, select, textarea');
+        
+        allInputs.forEach(input => {
+            const eventType = (input.type === 'checkbox' || input.tagName === 'SELECT') ? 'change' : 'input';
+            
+            input.addEventListener(eventType, debounce(() => {
+                // 1. Sync value to state
+                if (input.id) {
+                    state.inputValues[input.id] = (input.type === 'checkbox') ? input.checked : input.value;
                 }
+
+                // 2. Trigger Logic
+                // If it's a data input (in a tab pane), update data string
+                if (input.closest('.tab-pane') && state.activeTab !== 'scanner') {
+                    if (state.activeTab === 'raw') {
+                        state.data = document.getElementById('raw-data').value;
+                    } else {
+                        updateDataFromInputs();
+                    }
+                }
+                
+                // If it's a styling input, update settings object (handled by separate listeners below but redundancy is fine)
+                // Actually, let's keep the existing styling logic separate to handle the mapping logic cleanly.
+                
                 updateQR();
             }, 300));
         });
 
-        // Styling inputs
+        // Specific Styling Logic (mapping inputs to state.settings)
         const stylingInputs = {
             'qr-error': 'errorCorrection',
             // 'color-fg' handled separately for sync logic
@@ -965,6 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateQR();
             }, 200));
         });
+
 
         // Special handling for Foreground Color (Sync with Labels)
         const fgInput = document.getElementById('color-fg');
@@ -1355,30 +1378,59 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Update global state
         state.activeTab = loadedState.activeTab || 'raw';
         state.data = loadedState.data || '';
+        state.inputValues = loadedState.inputValues || {};
+        // Merge settings carefully
         state.settings = { ...state.settings, ...loadedState.settings };
+        if (loadedState.settings.labelTop) state.settings.labelTop = { ...loadedState.settings.labelTop };
+        if (loadedState.settings.labelBottom) state.settings.labelBottom = { ...loadedState.settings.labelBottom };
 
-        // 2. Restore UI Inputs
+        // 2. Restore ALL Inputs from inputValues map (Data Fields)
+        Object.entries(state.inputValues).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (el.type === 'checkbox') {
+                    el.checked = val;
+                } else {
+                    el.value = val;
+                }
+            }
+        });
+
+        // 3. Explicitly Restore Styling UI from Settings (Fallback/Guarantee)
         setVal('qr-error', state.settings.errorCorrection);
         setVal('color-fg', state.settings.colorFg);
         setVal('color-bg', state.settings.colorBg);
         setVal('shape-module', state.settings.shapeModule);
         setVal('shape-finder', state.settings.shapeFinder);
 
-        setVal('label-top-text', state.settings.labelTop.text);
-        setVal('label-top-align', state.settings.labelTop.align);
-        setVal('label-top-color', state.settings.labelTop.color);
-        setVal('label-top-font', state.settings.labelTop.font);
+        // Restore Labels UI
+        if (state.settings.labelTop) {
+            setVal('label-top-text', state.settings.labelTop.text);
+            setVal('label-top-align', state.settings.labelTop.align);
+            setVal('label-top-color', state.settings.labelTop.color);
+            setVal('label-top-font', state.settings.labelTop.font);
+        }
         
-        setVal('label-bottom-text', state.settings.labelBottom.text);
-        setVal('label-bottom-align', state.settings.labelBottom.align);
-        setVal('label-bottom-color', state.settings.labelBottom.color);
-        setVal('label-bottom-font', state.settings.labelBottom.font);
+        if (state.settings.labelBottom) {
+            setVal('label-bottom-text', state.settings.labelBottom.text);
+            setVal('label-bottom-align', state.settings.labelBottom.align);
+            setVal('label-bottom-color', state.settings.labelBottom.color);
+            setVal('label-bottom-font', state.settings.labelBottom.font);
+        }
 
-        document.getElementById('raw-data').value = state.data;
-        
+        // 4. Ensure UI Consistency
+        updateErrorHelpText(state.settings.errorCorrection);
+
+        // Switch to the correct tab
         const tabBtn = document.querySelector(`.tab-btn[data-tab="${state.activeTab}"]`);
         if (tabBtn) tabBtn.click();
         
+        // Force update
+        // If we have raw data but are in a specific tab, we might need to rely on the inputs being restored
+        // to regenerate the data string correctly.
+        if (state.activeTab !== 'raw') {
+            updateDataFromInputs();
+        }
         updateQR();
     }
 
