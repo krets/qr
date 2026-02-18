@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Generator | qr.krets.com</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
@@ -46,7 +47,7 @@
                             <input type="number" id="qr-padding" value="0" min="0" step="4" style="width: 60px;">
                         </div>
                         <div class="field">
-                            <label for="qr-size">Size</label>
+                            <label for="qr-size">Dot Size</label>
                             <input type="number" id="qr-size" value="15" min="1" max="50" style="width: 60px;">
                         </div>
                     </div>
@@ -54,7 +55,7 @@
                     <!-- Row 2: Shapes & Correction -->
                     <div class="field-row compact-row">
                         <div class="field">
-                            <label for="shape-finder">Finder</label>
+                            <label for="shape-finder">Finder Shape</label>
                             <select id="shape-finder">
                                 <option value="square">Square</option>
                                 <option value="dots">Circle</option>
@@ -62,7 +63,7 @@
                             </select>
                         </div>
                         <div class="field">
-                            <label for="shape-module">Module</label>
+                            <label for="shape-module">Dot Shape</label>
                             <select id="shape-module">
                                 <option value="square">Square</option>
                                 <option value="dots">Dots</option>
@@ -125,6 +126,10 @@
                     </div>
                 </div>
             </section>
+
+            <footer style="margin-top: 2rem; font-size: 0.75rem; color: var(--muted-text); text-align: center;">
+                <p>See a bug or just want to chat? Submit a request via <a href="https://github.com/krets/qr/issues" target="_blank" style="color: inherit; text-decoration: underline;">GitHub Issues</a>.</p>
+            </footer>
         </aside>
 
         <!-- RIGHT PANEL: Data Forms -->
