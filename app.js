@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const canvas = document.getElementById('qr-canvas');
     const ctx = canvas.getContext('2d');
-    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabBtns = document.querySelectorAll('.type-tabs .tab-btn');
     const tabPanes = document.querySelectorAll('.tab-pane');
     const downloadBtn = document.getElementById('download-btn');
 
@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function init() {
         setupTabs();
+        setupStylingTabs();
         setupInputs();
         setupLogoOverlay();
         setupVCardUI(); // New UI Logic for vCard
@@ -99,8 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- vCard UI Logic ---
     function setupVCardUI() {
-        // 1. Group Toggling
-        const groups = document.querySelectorAll('.vcard-group');
+        // 1. Group Toggling (excluding group-name which is fixed)
+        const groups = document.querySelectorAll('.vcard-group:not(#group-name)');
         groups.forEach(group => {
             const header = group.querySelector('.group-header');
             if (!header) return;
@@ -109,156 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 group.classList.toggle('collapsed');
                 updateDataFromInputs(); // Re-generate data to include/exclude fields
                 updateQR();
+                saveToLocalStorage();
             });
         });
-
-        // 2. Name Row "Add Field" Logic
-        const container = document.getElementById('name-container');
-        if (!container) return;
-
-        // Elements
-        const wrapPrefix = document.getElementById('wrap-prefix');
-        const wrapFn = document.getElementById('wrap-fn');
-        const wrapMn = document.getElementById('wrap-mn');
-        const wrapLn = document.getElementById('wrap-ln');
-        const wrapSuffix = document.getElementById('wrap-suffix');
-        const uiOverlay = document.getElementById('name-ui-overlay');
-        let hideTimeout;
-
-        // Create Buttons dynamically
-        const btnPrefix = createAddBtn('Add Prefix', () => showField(wrapPrefix, btnPrefix));
-        const btnMiddle = createAddBtn('Add Middle', () => showField(wrapMn, btnMiddle));
-        const btnSuffix = createAddBtn('Add Suffix', () => showField(wrapSuffix, btnSuffix));
-        const divider = document.createElement('div');
-        divider.className = 'name-divider-line';
-
-        uiOverlay.appendChild(btnPrefix);
-        uiOverlay.appendChild(btnMiddle);
-        uiOverlay.appendChild(btnSuffix);
-        uiOverlay.appendChild(divider);
-
-        // Hover Logic
-        container.addEventListener('mousemove', (e) => {
-            clearTimeout(hideTimeout); // Cancel pending hide
-            
-            const rect = container.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            
-            // Get positions of visible main fields
-            const rectFn = wrapFn.getBoundingClientRect();
-            const rectLn = wrapLn.getBoundingClientRect();
-
-            // Offsets relative to container
-            const fnLeft = rectFn.left - rect.left;
-            const fnRight = rectFn.right - rect.left;
-            const lnLeft = rectLn.left - rect.left;
-            const lnRight = rectLn.right - rect.left;
-
-            // Reset only if we are moving to a new zone, but let's just recalculate
-            // Actually, we should only hide if we are NOT in a zone
-            let inZone = false;
-
-            // 1. Left of FN -> Prefix
-            if (!isVisible(wrapPrefix) && x >= fnLeft && x <= fnLeft + (rectFn.width * 0.3)) {
-                showAddUI(btnPrefix, divider, fnLeft);
-                inZone = true;
-            }
-            // 2. Right of FN or Left of LN -> Middle
-            else if (!isVisible(wrapMn) && x >= fnRight - (rectFn.width * 0.3) && x <= lnLeft + (rectLn.width * 0.3)) {
-                const midX = (fnRight + lnLeft) / 2;
-                const targetX = (lnLeft - fnRight < 10) ? fnRight : midX;
-                showAddUI(btnMiddle, divider, targetX);
-                inZone = true;
-            }
-            // 3. Right of LN -> Suffix
-            else if (!isVisible(wrapSuffix) && x >= lnRight - (rectLn.width * 0.3) && x <= lnRight) {
-                showAddUI(btnSuffix, divider, lnRight);
-                inZone = true;
-            }
-
-            if (!inZone) {
-                // If not in a trigger zone, we might be moving towards the button
-                // But we don't want to hide immediately if we are ON the button
-                // The button has pointer-events: auto when visible, so it captures mouse events?
-                // Actually, the button is inside uiOverlay inside container, so mousemove bubbles.
-                // We can check if e.target is a button.
-                if (e.target.classList.contains('name-adder-btn')) {
-                    // Do nothing, keep visible
-                } else {
-                    // We are in container but not in zone. Hide after short delay?
-                    // Or hide immediately? User said "mouseout happens before button is touched".
-                    // If we hide immediately here, the user can't reach the button if it's slightly offset.
-                    // But our CSS update put the button inside the padding area which is part of container.
-                    // So mousemove should still fire.
-                    hideAllAddUI(); 
-                }
-            }
-        });
-
-        container.addEventListener('mouseleave', () => {
-            // Delay hiding to allow moving to button if it was somehow outside (it shouldn't be now)
-            // But good for UX anyway
-            hideTimeout = setTimeout(() => {
-                hideAllAddUI();
-            }, 300);
-        });
-        
-        // Also keep visible if hovering the button itself (extra safety if button moves outside)
-        [btnPrefix, btnMiddle, btnSuffix].forEach(btn => {
-             btn.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
-             btn.addEventListener('mouseleave', () => {
-                 hideTimeout = setTimeout(() => hideAllAddUI(), 300);
-             });
-        });
-
-        function createAddBtn(text, onClick) {
-            const btn = document.createElement('div');
-            btn.className = 'name-adder-btn';
-            btn.textContent = text;
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent trigger from firing again immediately
-                onClick();
-            });
-            return btn;
-        }
-
-        function showField(wrapper, btn) {
-            wrapper.classList.remove('hidden');
-            // Hide specific button UI immediately
-            btn.classList.remove('visible');
-            divider.classList.remove('visible');
-            updateDataFromInputs();
-            updateQR();
-        }
-
-        function isVisible(el) {
-            return !el.classList.contains('hidden');
-        }
-
-        function showAddUI(btn, line, xPos) {
-            // Hide others first
-            [btnPrefix, btnMiddle, btnSuffix].forEach(b => {
-                if (b !== btn) b.classList.remove('visible');
-            });
-            
-            btn.classList.add('visible');
-            line.classList.add('visible');
-            
-            // Position Line
-            line.style.left = `${xPos}px`;
-            
-            // Position Button (Centered above line)
-            btn.style.left = `${xPos}px`;
-            btn.style.transform = `translateX(-50%) translateY(0)`;
-        }
-
-        function hideAllAddUI() {
-            [btnPrefix, btnMiddle, btnSuffix].forEach(b => {
-                b.classList.remove('visible');
-                b.style.transform = `translateX(-50%) translateY(5px)`;
-            });
-            divider.classList.remove('visible');
-        }
     }
 
     function saveToLocalStorage() {
@@ -316,6 +170,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateQR();
                 }
                 saveToLocalStorage();
+            });
+        });
+    }
+
+    // --- Styling Tabs Logic ---
+    function setupStylingTabs() {
+        const styleTabBtns = document.querySelectorAll('.style-tab-btn');
+        const styleTabPanes = document.querySelectorAll('.style-tab-pane');
+
+        styleTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.styleTab;
+                styleTabBtns.forEach(b => b.classList.remove('active'));
+                styleTabPanes.forEach(p => p.classList.remove('active'));
+
+                btn.classList.add('active');
+                const pane = document.getElementById(`style-tab-${target}`);
+                if (pane) pane.classList.add('active');
             });
         });
     }
@@ -433,6 +305,49 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 200));
         });
 
+        // Instant slider badge updates as dragging
+        const sliders = document.querySelectorAll('input[type="range"]');
+        sliders.forEach(slider => {
+            slider.addEventListener('input', () => {
+                updateSliderBadge(slider.id, slider.value);
+            });
+        });
+
+        // Setup bidirectional number inputs
+        const sliderNumInputs = document.querySelectorAll('.slider-num-input');
+        sliderNumInputs.forEach(numInput => {
+            const sliderId = numInput.id.replace('-num', '');
+            const slider = document.getElementById(sliderId);
+            if (!slider) return;
+
+            numInput.addEventListener('input', () => {
+                let val = parseInt(numInput.value);
+                if (isNaN(val)) return; // Ignore empty values while typing
+                
+                // Set slider value, which automatically clamps to min/max
+                slider.value = val;
+                
+                // Dispatch input event to range slider to update state & QR
+                slider.dispatchEvent(new Event('input'));
+            });
+
+            numInput.addEventListener('blur', () => {
+                let val = parseInt(numInput.value);
+                const min = parseInt(numInput.min) || 0;
+                const max = parseInt(numInput.max) || 100;
+                if (isNaN(val)) {
+                    val = min;
+                } else if (val < min) {
+                    val = min;
+                } else if (val > max) {
+                    val = max;
+                }
+                numInput.value = val;
+                slider.value = val;
+                slider.dispatchEvent(new Event('input'));
+            });
+        });
+
         downloadBtn.addEventListener('click', exportPNG);
     }
 
@@ -518,13 +433,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const el = document.getElementById(id);
                 if (!el) return '';
                 
-                // 1. Check if group is collapsed
+                // Check if group is collapsed
                 const group = el.closest('.vcard-group');
                 if (group && group.classList.contains('collapsed')) return '';
-
-                // 2. Check if specific field wrapper is hidden (Name fields)
-                const wrapper = el.closest('.name-field-wrapper');
-                if (wrapper && wrapper.classList.contains('hidden')) return '';
 
                 return el.value;
             };
@@ -598,8 +509,48 @@ document.addEventListener('DOMContentLoaded', () => {
             qr.make();
             const moduleCount = qr.getModuleCount();
             renderCanvas(qr, moduleCount);
+            updateDownloadScaleLabels(moduleCount);
         } catch (e) {
             console.error("QR Generation Error:", e);
+        }
+    }
+
+    function updateDownloadScaleLabels(count) {
+        const scaleSelect = document.getElementById('download-scale');
+        if (!scaleSelect || !count) return;
+
+        const cellSize = state.settings.moduleSize || 15;
+        const baseMargin = cellSize * 2;
+        const topFontSize = parseInt(state.settings.labelTop.size) || 20;
+        const bottomFontSize = parseInt(state.settings.labelBottom.size) || 20;
+        const userPadding = parseInt(state.settings.padding) || 0;
+        
+        const marginTop = state.settings.labelTop.text ? Math.max(baseMargin, topFontSize * 1.8) : baseMargin;
+        const marginBottom = state.settings.labelBottom.text ? Math.max(baseMargin, bottomFontSize * 1.8) : baseMargin;
+        const marginLeft = baseMargin;
+        const marginRight = baseMargin;
+        
+        const size = count * cellSize;
+        const baseWidth = size + marginLeft + marginRight + (userPadding * 2);
+        const baseHeight = size + marginTop + marginBottom + (userPadding * 2);
+
+        const options = scaleSelect.options;
+        for (let i = 0; i < options.length; i++) {
+            const opt = options[i];
+            const scale = parseInt(opt.value) || 1;
+            const w = Math.round(baseWidth * scale);
+            const h = Math.round(baseHeight * scale);
+            
+            let label = '';
+            if (scale === 1) label = `1x (${w}x${h}px - Screen)`;
+            else if (scale === 2) label = `2x (${w}x${h}px - Print Low)`;
+            else if (scale === 4) label = `4x (${w}x${h}px - Print Med)`;
+            else if (scale === 8) label = `8x (${w}x${h}px - Print High)`;
+            else if (scale === 12) label = `12x (${w}x${h}px - Print Ultra)`;
+            else if (scale === 16) label = `16x (${w}x${h}px - Vector-like)`;
+            else label = `${scale}x (${w}x${h}px)`;
+            
+            opt.textContent = label;
         }
     }
 
@@ -1214,9 +1165,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return r >= centerStart && r < centerEnd && c >= centerStart && c < centerEnd;
     }
 
+    function updateSliderBadge(id, val) {
+        const badge = document.getElementById(`${id}-val`);
+        if (badge) {
+            badge.textContent = val;
+        }
+        const numInput = document.getElementById(`${id}-num`);
+        if (numInput) {
+            numInput.value = val;
+        }
+    }
+
     function setVal(id, val) {
         const el = document.getElementById(id);
-        if (el) el.value = val;
+        if (el) {
+            if (el.type === 'checkbox') {
+                el.checked = val;
+            } else {
+                el.value = val;
+            }
+            updateSliderBadge(id, val);
+        }
     }
 
     function debounce(func, wait) {

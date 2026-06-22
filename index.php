@@ -33,14 +33,15 @@ if (file_exists($gitRefPath)) {
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- LEFT PANEL: Title, Data Forms, Footer -->
-        <aside class="left-panel">
+    <div class="main-container">
+        <div class="columns-container">
+            <!-- COLUMN 1: Tab Specific Details -->
+            <main class="config-pane">
             <header>
-                <h1>qr.krets.com</h1>
+                <h1 class="brand">qr.krets.com</h1>
             </header>
 
-            <section class="controls-section">
+            <nav class="type-tabs">
                 <div class="tabs">
                     <button class="tab-btn active" data-tab="vcard">vCard</button>
                     <button class="tab-btn" data-tab="url">URL</button>
@@ -48,43 +49,48 @@ if (file_exists($gitRefPath)) {
                     <button class="tab-btn" data-tab="raw">Raw</button>
                     <button class="tab-btn" data-tab="scanner">Scanner</button>
                 </div>
+            </nav>
 
+            <!-- Dynamic Input Card -->
+            <section class="card data-input">
                 <div class="tab-content">
                     <!-- vCard Tab -->
                     <div id="tab-vcard" class="tab-pane active">
                         
-                        <!-- Name Group (Special Logic) -->
-                        <div class="vcard-group" id="group-name">
-                            <div class="group-header" title="Toggle visibility">Name</div>
+                        <!-- Prefix Group -->
+                        <div class="vcard-group collapsed" id="group-prefix">
+                            <div class="group-header">Prefix</div>
                             <div class="group-content">
-                                <div class="name-row-container" id="name-container">
-                                    <!-- Hidden Inputs Helpers (UI) -->
-                                    <div id="name-ui-overlay" class="name-ui-overlay"></div>
+                                <div class="field">
+                                    <input type="text" id="vc-prefix" placeholder="Prefix (e.g. Mr., Dr.)">
+                                </div>
+                            </div>
+                        </div>
 
-                                    <!-- Prefix -->
-                                    <div class="name-field-wrapper hidden" id="wrap-prefix">
-                                        <input type="text" id="vc-prefix" placeholder="Prefix">
-                                    </div>
-                                    
-                                    <!-- First Name (Always Visible) -->
-                                    <div class="name-field-wrapper" id="wrap-fn">
+                        <!-- Name Group (Always Visible) -->
+                        <div class="vcard-group" id="group-name">
+                            <div class="group-header">Name</div>
+                            <div class="group-content">
+                                <div class="field-row compact-gap">
+                                    <div class="field" style="flex: 1.2;">
                                         <input type="text" id="vc-fn" placeholder="First Name">
                                     </div>
-
-                                    <!-- Middle Name -->
-                                    <div class="name-field-wrapper hidden" id="wrap-mn">
-                                        <input type="text" id="vc-mn" placeholder="Middle">
+                                    <div class="field" style="flex: 0.8;">
+                                        <input type="text" id="vc-mn" placeholder="Middle Name">
                                     </div>
-
-                                    <!-- Last Name (Always Visible) -->
-                                    <div class="name-field-wrapper" id="wrap-ln">
+                                    <div class="field" style="flex: 1.2;">
                                         <input type="text" id="vc-ln" placeholder="Last Name">
                                     </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                    <!-- Suffix -->
-                                    <div class="name-field-wrapper hidden" id="wrap-suffix">
-                                        <input type="text" id="vc-suffix" placeholder="Suffix">
-                                    </div>
+                        <!-- Suffix Group -->
+                        <div class="vcard-group collapsed" id="group-suffix">
+                            <div class="group-header">Suffix</div>
+                            <div class="group-content">
+                                <div class="field">
+                                    <input type="text" id="vc-suffix" placeholder="Suffix (e.g. Jr., III)">
                                 </div>
                             </div>
                         </div>
@@ -103,11 +109,11 @@ if (file_exists($gitRefPath)) {
                         <div class="vcard-group collapsed">
                             <div class="group-header">Title & Organization</div>
                             <div class="group-content">
-                                <div class="field-row">
+                                <div class="field-row compact-gap">
                                     <div class="field" style="flex: 1;">
                                         <input type="text" id="vc-title" placeholder="Job Title / Role">
                                     </div>
-                                    <div class="field" style="flex: 2;">
+                                    <div class="field" style="flex: 1.5;">
                                         <input type="text" id="vc-org" placeholder="Company / Organization">
                                     </div>
                                 </div>
@@ -216,29 +222,27 @@ if (file_exists($gitRefPath)) {
 
                     <!-- Wi-Fi Tab -->
                     <div id="tab-wifi" class="tab-pane">
-                        <div class="field-row">
-                            <div class="field" style="flex: 3;">
-                                <label for="wifi-ssid">Network Name (SSID)</label>
-                                <input type="text" id="wifi-ssid" placeholder="BER Airport Free Airport Wi-Fi">
-                            </div>
-                            <div class="field checkbox-field" style="flex: 1;">
-                                <label>
-                                    <input type="checkbox" id="wifi-hidden"> Hidden
-                                </label>
-                            </div>
+                        <div class="field">
+                            <label for="wifi-ssid">Network Name (SSID)</label>
+                            <input type="text" id="wifi-ssid" placeholder="BER Airport Free Airport Wi-Fi">
                         </div>
-                        <div class="field-row">
+                        <div class="field-row wifi-settings-row">
                             <div class="field" style="flex: 2;">
                                 <label for="wifi-pass">Password</label>
                                 <input type="password" id="wifi-pass">
                             </div>
-                            <div class="field" style="flex: 1;">
+                            <div class="field" style="flex: 1.2;">
                                 <label for="wifi-enc">Type</label>
                                 <select id="wifi-enc">
                                     <option value="WPA">WPA</option>
                                     <option value="WEP">WEP</option>
                                     <option value="nopass">None</option>
                                 </select>
+                            </div>
+                            <div class="field checkbox-field-container">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="wifi-hidden"> Hidden
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -269,79 +273,95 @@ if (file_exists($gitRefPath)) {
                     </div>
                 </div>
             </section>
+        </main>
 
-            <footer class="app-footer">
-                <p>See a bug or just want to chat? Submit a request via <a href="https://github.com/krets/qr/issues" target="_blank" style="color: inherit; text-decoration: underline;">GitHub Issues</a>.</p>
-            </footer>
-        </aside>
-
-        <!-- RIGHT PANEL: Preview & Visual Settings -->
-        <main class="right-panel">
-            <div class="canvas-wrapper">
-                <canvas id="qr-canvas"></canvas>
-            </div>
-            
-            <div class="actions">
-                <div class="download-group">
-                    <button id="download-btn" class="primary-btn">Download PNG</button>
-                    <select id="download-scale" title="Export Scale">
-                        <option value="1">1x (Screen)</option>
-                        <option value="2">2x (Print - Low)</option>
-                        <option value="4" selected>4x (Print - Med)</option>
-                        <option value="8">8x (Print - High)</option>
-                        <option value="12">12x (Print - Ultra)</option>
-                        <option value="16">16x (Print - Vector-like)</option>
-                    </select>
+        <!-- COLUMN 2: Everything Else (Preview & Styling Panels) -->
+        <aside class="preview-pane">
+            <div class="sticky-preview-block">
+                <div class="qr-preview-wrapper">
+                    <canvas id="qr-canvas"></canvas>
+                </div>
+                <div class="action-row">
+                    <div class="download-group">
+                        <button id="download-btn" class="primary-btn">Download PNG</button>
+                        <select id="download-scale" title="Export Scale">
+                            <option value="1">1x (Screen)</option>
+                            <option value="2">2x (Print - Low)</option>
+                            <option value="4" selected>4x (Print - Med)</option>
+                            <option value="8">8x (Print - High)</option>
+                            <option value="12">12x (Print - Ultra)</option>
+                            <option value="16">16x (Print - Vector-like)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <!-- Visual Settings Group -->
-            <section class="visual-settings">
-                
-                <!-- Appearance Group -->
-                <div class="settings-group">
-                    <h3>Appearance</h3>
-                    
-                    <!-- Row 1: Colors, Padding, Size -->
-                    <div class="field-row compact-row" style="align-items: flex-end;">
-                        <div class="field" style="flex: 0 0 auto;">
-                            <label for="color-fg">Color</label>
-                            <input type="color" id="color-fg" class="square-color-input" value="#000000" title="Foreground">
-                        </div>
-                        <div class="field" style="flex: 0 0 auto;">
-                            <label for="color-bg">BG</label>
-                            <input type="color" id="color-bg" class="square-color-input" value="#ffffff" title="Background">
-                        </div>
-                        <div class="field">
-                            <label for="qr-padding">Padding</label>
-                            <input type="number" id="qr-padding" value="0" min="0" step="4" style="width: 60px;">
-                        </div>
-                        <div class="field">
-                            <label for="qr-size">Dot Size</label>
-                            <input type="number" id="qr-size" value="15" min="1" max="50" style="width: 60px;">
-                        </div>
+            <!-- Customization Card -->
+            <section class="card styling-card">
+                <h2>Customization</h2>
+                <nav class="style-tabs">
+                    <div class="tabs">
+                        <button type="button" class="style-tab-btn active" data-style-tab="appearance">Appearance</button>
+                        <button type="button" class="style-tab-btn" data-style-tab="logo">Logo</button>
+                        <button type="button" class="style-tab-btn" data-style-tab="labels">Labels</button>
                     </div>
+                </nav>
 
-                    <!-- Row 2: Shapes & Correction -->
-                    <div class="field-row compact-row">
-                        <div class="field">
-                            <label for="shape-finder">Finder Shape</label>
-                            <select id="shape-finder">
-                                <option value="square">Square</option>
-                                <option value="dots">Circle</option>
-                                <option value="rounded">Rounded</option>
-                            </select>
+                <div class="style-tab-content">
+                    <!-- Appearance Tab -->
+                    <div id="style-tab-appearance" class="style-tab-pane active">
+                        <div class="field-row compact-gap" style="margin-bottom: 1rem;">
+                            <div class="field" style="flex: 0 0 auto;">
+                                <label for="color-fg">Color</label>
+                                <input type="color" id="color-fg" class="square-color-input" value="#000000" title="Foreground">
+                            </div>
+                            <div class="field" style="flex: 0 0 auto;">
+                                <label for="color-bg">BG</label>
+                                <input type="color" id="color-bg" class="square-color-input" value="#ffffff" title="Background">
+                            </div>
+                            <div class="field" style="flex: 1;">
+                                <label for="shape-finder">Finder Shape</label>
+                                <select id="shape-finder">
+                                    <option value="square">Square</option>
+                                    <option value="dots">Circle</option>
+                                    <option value="rounded">Rounded</option>
+                                </select>
+                            </div>
+                            <div class="field" style="flex: 1;">
+                                <label for="shape-module">Dot Shape</label>
+                                <select id="shape-module">
+                                    <option value="square">Square</option>
+                                    <option value="dots">Dots</option>
+                                    <option value="rounded">Rounded</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="field">
-                            <label for="shape-module">Dot Shape</label>
-                            <select id="shape-module">
-                                <option value="square">Square</option>
-                                <option value="dots">Dots</option>
-                                <option value="rounded">Rounded</option>
-                            </select>
+
+                        <div class="field-row compact-gap" style="margin-bottom: 1rem;">
+                            <div class="field" style="flex: 1;">
+                                <div class="slider-label-row">
+                                    <label for="qr-size">Dot Size</label>
+                                    <div class="slider-val-container">
+                                        <input type="number" id="qr-size-num" min="5" max="40" value="15" class="slider-num-input">
+                                        <span class="unit">px</span>
+                                    </div>
+                                </div>
+                                <input type="range" id="qr-size" class="slider-input" value="15" min="5" max="40" step="1">
+                            </div>
+                            <div class="field" style="flex: 1;">
+                                <div class="slider-label-row">
+                                    <label for="qr-padding">Padding</label>
+                                    <div class="slider-val-container">
+                                        <input type="number" id="qr-padding-num" min="0" max="80" value="0" class="slider-num-input">
+                                        <span class="unit">px</span>
+                                    </div>
+                                </div>
+                                <input type="range" id="qr-padding" class="slider-input" value="0" min="0" max="80" step="4">
+                            </div>
                         </div>
+
                         <div class="field">
-                            <label for="qr-error">Correction</label>
+                            <label for="qr-error">Error Correction</label>
                             <select id="qr-error">
                                 <option value="L">Low (7%)</option>
                                 <option value="M" selected>Med (15%)</option>
@@ -350,91 +370,154 @@ if (file_exists($gitRefPath)) {
                             </select>
                         </div>
                     </div>
-                </div>
 
-                <!-- Labels Group -->
-                <div class="settings-group">
-                    <h3>Labels</h3>
-                    
-                    <!-- Font Datalist -->
-                    <datalist id="font-list">
-                        <option value="sans-serif">Sans-Serif</option>
-                        <option value="serif">Serif</option>
-                        <option value="monospace">Monospace</option>
-                        <option value="Segoe UI Symbol">Segoe UI Symbol</option>
-                        <option value="Arial">Arial</option>
-                        <option value="Verdana">Verdana</option>
-                        <option value="Courier New">Courier New</option>
-                    </datalist>
+                    <!-- Logo Overlay Tab -->
+                    <div id="style-tab-logo" class="style-tab-pane">
+                        <div class="logo-grid">
+                            <div class="logo-upload-container">
+                                <div class="logo-upload-zone" id="logo-drop-zone">
+                                    <span id="logo-placeholder-text">Click, Drag, or Paste Logo Image</span>
+                                    <img id="logo-preview-thumbnail" style="display: none; max-height: 48px; border-radius: 4px; border: 1px solid var(--border-color);" />
+                                    <input type="file" id="logo-file-input" accept="image/*" style="display: none;">
+                                </div>
+                                <button type="button" id="logo-remove-btn" class="secondary-btn danger-btn" style="display: none; margin-top: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.8rem; width: 100%;">Remove Logo</button>
+                            </div>
+                            <div class="logo-settings">
+                                <div class="field">
+                                    <label for="logo-shape">BG Shape</label>
+                                    <select id="logo-shape">
+                                        <option value="none">None</option>
+                                        <option value="square">Square</option>
+                                        <option value="circle">Circle</option>
+                                        <option value="rounded">Rounded</option>
+                                    </select>
+                                </div>
 
-                    <!-- Top Label -->
-                    <div class="label-compact">
-                        <input type="text" id="label-top-text" class="label-text-input" placeholder="Top Label Text">
-                        <div class="label-controls">
-                            <input type="color" id="label-top-color" value="#000000" title="Color">
-                            <select id="label-top-align" title="Alignment">
-                                <option value="center">Center</option>
-                                <option value="left">Left</option>
-                                <option value="right">Right</option>
-                            </select>
-                            <input type="text" id="label-top-font" list="font-list" placeholder="Font" value="sans-serif" class="font-input">
-                            <input type="number" id="label-top-size" value="20" min="8" max="100" title="Font Size" style="width: 55px;" placeholder="Size">
+                                <div class="field">
+                                    <div class="slider-label-row">
+                                        <label for="logo-size">Logo Size</label>
+                                        <div class="slider-val-container">
+                                            <input type="number" id="logo-size-num" min="10" max="35" value="20" class="slider-num-input">
+                                            <span class="unit">%</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="logo-size" class="slider-input" value="20" min="10" max="35" step="1">
+                                </div>
+
+                                <div class="field">
+                                    <div class="slider-label-row">
+                                        <label for="logo-padding">Padding</label>
+                                        <div class="slider-val-container">
+                                            <input type="number" id="logo-padding-num" min="0" max="25" value="4" class="slider-num-input">
+                                            <span class="unit">px</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="logo-padding" class="slider-input" value="4" min="0" max="25" step="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="logo-warning" class="logo-warning-box" style="display: none; margin-top: 0.5rem; color: #dc3545; font-size: 0.75rem; font-weight: 500;">
+                            ⚠️ Error Correction "High" is recommended for active logos to ensure scanability.
                         </div>
                     </div>
 
-                    <!-- Bottom Label -->
-                    <div class="label-compact">
-                        <input type="text" id="label-bottom-text" class="label-text-input" placeholder="Bottom Label Text">
-                        <div class="label-controls">
-                            <input type="color" id="label-bottom-color" value="#000000" title="Color">
-                            <select id="label-bottom-align" title="Alignment">
-                                <option value="center">Center</option>
-                                <option value="left">Left</option>
-                                <option value="right">Right</option>
-                            </select>
-                            <input type="text" id="label-bottom-font" list="font-list" placeholder="Font" value="sans-serif" class="font-input">
-                            <input type="number" id="label-bottom-size" value="20" min="8" max="100" title="Font Size" style="width: 55px;" placeholder="Size">
-                        </div>
-                    </div>
-                </div>
+                    <!-- Labels Tab -->
+                    <div id="style-tab-labels" class="style-tab-pane">
+                        <datalist id="font-list">
+                            <option value="sans-serif">Sans-Serif</option>
+                            <option value="serif">Serif</option>
+                            <option value="monospace">Monospace</option>
+                            <option value="Segoe UI Symbol">Segoe UI Symbol</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Verdana">Verdana</option>
+                            <option value="Courier New">Courier New</option>
+                        </datalist>
 
-                <!-- Logo Group -->
-                <div class="settings-group">
-                    <h3>Logo Overlay</h3>
-                    <div class="logo-upload-container">
-                        <div class="logo-upload-zone" id="logo-drop-zone">
-                            <span id="logo-placeholder-text">Click, Drag, or Paste Logo Image</span>
-                            <img id="logo-preview-thumbnail" style="display: none; max-height: 48px; border-radius: 4px; border: 1px solid var(--border-color);" />
-                            <input type="file" id="logo-file-input" accept="image/*" style="display: none;">
+                        <div class="labels-grid">
+                            <!-- Top Label -->
+                            <div class="label-section">
+                                <h4>Top Label</h4>
+                                <div class="field">
+                                    <input type="text" id="label-top-text" class="label-text-input" placeholder="Top Label Text">
+                                </div>
+                                <div class="field-row font-styling-row">
+                                    <div class="field color-field">
+                                        <label>Color</label>
+                                        <input type="color" id="label-top-color" value="#000000" class="compact-color-picker">
+                                    </div>
+                                    <div class="field align-field" style="flex: 1.2;">
+                                        <label>Align</label>
+                                        <select id="label-top-align">
+                                            <option value="center">Center</option>
+                                            <option value="left">Left</option>
+                                            <option value="right">Right</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="field" style="margin-top: 0.5rem;">
+                                    <label>Font Family</label>
+                                    <input type="text" id="label-top-font" list="font-list" placeholder="Font" value="sans-serif">
+                                </div>
+                                <div class="field">
+                                    <div class="slider-label-row">
+                                        <label for="label-top-size">Font Size</label>
+                                        <div class="slider-val-container">
+                                            <input type="number" id="label-top-size-num" min="8" max="60" value="20" class="slider-num-input">
+                                            <span class="unit">px</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="label-top-size" class="slider-input" value="20" min="8" max="60" step="1">
+                                </div>
+                            </div>
+
+                            <!-- Bottom Label -->
+                            <div class="label-section">
+                                <h4>Bottom Label</h4>
+                                <div class="field">
+                                    <input type="text" id="label-bottom-text" class="label-text-input" placeholder="Bottom Label Text">
+                                </div>
+                                <div class="field-row font-styling-row">
+                                    <div class="field color-field">
+                                        <label>Color</label>
+                                        <input type="color" id="label-bottom-color" value="#000000" class="compact-color-picker">
+                                    </div>
+                                    <div class="field align-field" style="flex: 1.2;">
+                                        <label>Align</label>
+                                        <select id="label-bottom-align">
+                                            <option value="center">Center</option>
+                                            <option value="left">Left</option>
+                                            <option value="right">Right</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="field" style="margin-top: 0.5rem;">
+                                    <label>Font Family</label>
+                                    <input type="text" id="label-bottom-font" list="font-list" placeholder="Font" value="sans-serif">
+                                </div>
+                                <div class="field">
+                                    <div class="slider-label-row">
+                                        <label for="label-bottom-size">Font Size</label>
+                                        <div class="slider-val-container">
+                                            <input type="number" id="label-bottom-size-num" min="8" max="60" value="20" class="slider-num-input">
+                                            <span class="unit">px</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="label-bottom-size" class="slider-input" value="20" min="8" max="60" step="1">
+                                </div>
+                            </div>
                         </div>
-                        <button type="button" id="logo-remove-btn" class="secondary-btn danger-btn" style="display: none; margin-top: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.8rem; width: 100%;">Remove Logo</button>
-                    </div>
-                    <div class="field-row compact-row" style="margin-top: 0.75rem;">
-                        <div class="field">
-                            <label for="logo-size">Size (%)</label>
-                            <input type="number" id="logo-size" value="20" min="10" max="35" style="width: 60px;">
-                        </div>
-                        <div class="field">
-                            <label for="logo-shape">BG Shape</label>
-                            <select id="logo-shape">
-                                <option value="none">None</option>
-                                <option value="square">Square</option>
-                                <option value="circle">Circle</option>
-                                <option value="rounded">Rounded</option>
-                            </select>
-                        </div>
-                        <div class="field">
-                            <label for="logo-padding">Padding</label>
-                            <input type="number" id="logo-padding" value="4" min="0" max="25" style="width: 60px;">
-                        </div>
-                    </div>
-                    <div id="logo-warning" class="logo-warning-box" style="display: none; margin-top: 0.5rem; color: #dc3545; font-size: 0.75rem; font-weight: 500;">
-                        ⚠️ Error Correction "High" is recommended for active logos to ensure scanability.
                     </div>
                 </div>
             </section>
-        </main>
-    </div>
-    <script src="app.js?v=<?= $version ?>"></script>
+        </aside>
+
+    </div> <!-- Close columns-container -->
+
+    <footer class="app-footer">
+        <p>See a bug or just want to chat? Submit a request via <a href="https://github.com/krets/qr/issues" target="_blank" style="color: inherit; text-decoration: underline;">GitHub Issues</a>.</p>
+    </footer>
+
+</div> <!-- Close main-container -->
+<script src="app.js?v=<?= $version ?>"></script>
 </body>
 </html>
