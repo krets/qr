@@ -282,7 +282,17 @@ if (file_exists($gitRefPath)) {
             </div>
             
             <div class="actions">
-                <button id="download-btn" class="primary-btn">Download PNG</button>
+                <div class="download-group">
+                    <button id="download-btn" class="primary-btn">Download PNG</button>
+                    <select id="download-scale" title="Export Scale">
+                        <option value="1">1x (Screen)</option>
+                        <option value="2">2x (Print - Low)</option>
+                        <option value="4" selected>4x (Print - Med)</option>
+                        <option value="8">8x (Print - High)</option>
+                        <option value="12">12x (Print - Ultra)</option>
+                        <option value="16">16x (Print - Vector-like)</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Visual Settings Group -->
@@ -368,6 +378,7 @@ if (file_exists($gitRefPath)) {
                                 <option value="right">Right</option>
                             </select>
                             <input type="text" id="label-top-font" list="font-list" placeholder="Font" value="sans-serif" class="font-input">
+                            <input type="number" id="label-top-size" value="20" min="8" max="100" title="Font Size" style="width: 55px;" placeholder="Size">
                         </div>
                     </div>
 
@@ -382,7 +393,43 @@ if (file_exists($gitRefPath)) {
                                 <option value="right">Right</option>
                             </select>
                             <input type="text" id="label-bottom-font" list="font-list" placeholder="Font" value="sans-serif" class="font-input">
+                            <input type="number" id="label-bottom-size" value="20" min="8" max="100" title="Font Size" style="width: 55px;" placeholder="Size">
                         </div>
+                    </div>
+                </div>
+
+                <!-- Logo Group -->
+                <div class="settings-group">
+                    <h3>Logo Overlay</h3>
+                    <div class="logo-upload-container">
+                        <div class="logo-upload-zone" id="logo-drop-zone">
+                            <span id="logo-placeholder-text">Click, Drag, or Paste Logo Image</span>
+                            <img id="logo-preview-thumbnail" style="display: none; max-height: 48px; border-radius: 4px; border: 1px solid var(--border-color);" />
+                            <input type="file" id="logo-file-input" accept="image/*" style="display: none;">
+                        </div>
+                        <button type="button" id="logo-remove-btn" class="secondary-btn danger-btn" style="display: none; margin-top: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.8rem; width: 100%;">Remove Logo</button>
+                    </div>
+                    <div class="field-row compact-row" style="margin-top: 0.75rem;">
+                        <div class="field">
+                            <label for="logo-size">Size (%)</label>
+                            <input type="number" id="logo-size" value="20" min="10" max="35" style="width: 60px;">
+                        </div>
+                        <div class="field">
+                            <label for="logo-shape">BG Shape</label>
+                            <select id="logo-shape">
+                                <option value="none">None</option>
+                                <option value="square">Square</option>
+                                <option value="circle">Circle</option>
+                                <option value="rounded">Rounded</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="logo-padding">Padding</label>
+                            <input type="number" id="logo-padding" value="4" min="0" max="25" style="width: 60px;">
+                        </div>
+                    </div>
+                    <div id="logo-warning" class="logo-warning-box" style="display: none; margin-top: 0.5rem; color: #dc3545; font-size: 0.75rem; font-weight: 500;">
+                        ⚠️ Error Correction "High" is recommended for active logos to ensure scanability.
                     </div>
                 </div>
             </section>

@@ -5,20 +5,60 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // State management
-    const state = {
-        activeTab: 'vcard',
+    const defaultSettings = {
+        errorCorrection: 'M',
+        colorFg: '#000000',
+        colorBg: '#ffffff',
+        shapeModule: 'square',
+        shapeFinder: 'square',
+        padding: 0,
+        moduleSize: 15,
+        labelTop: { text: '', font: 'sans-serif', align: 'center', color: '#000000', size: 20 },
+        labelBottom: { text: '', font: 'sans-serif', align: 'center', color: '#000000', size: 20 },
+        overlayImage: null,
+        logoSize: 20,
+        logoShape: 'none',
+        logoPadding: 4
+    };
+
+    const createDefaultTypeState = () => ({
         data: '',
         inputValues: {},
-        settings: {
-            errorCorrection: 'M',
-            colorFg: '#000000',
-            colorBg: '#ffffff',
-            shapeModule: 'square',
-            shapeFinder: 'square',
-            padding: 0,
-            moduleSize: 15,
-            labelTop: { text: '', font: 'sans-serif', align: 'center', color: '#000000' },
-            labelBottom: { text: '', font: 'sans-serif', align: 'center', color: '#000000' }
+        settings: JSON.parse(JSON.stringify(defaultSettings))
+    });
+
+    const state = {
+        activeTab: 'vcard',
+        types: {
+            vcard: createDefaultTypeState(),
+            url: createDefaultTypeState(),
+            wifi: createDefaultTypeState(),
+            raw: createDefaultTypeState()
+        },
+        logoImageObject: null, // Keep in memory HTMLImageElement
+        get settings() {
+            const tab = (this.activeTab === 'scanner') ? 'vcard' : this.activeTab;
+            return this.types[tab].settings;
+        },
+        set settings(val) {
+            const tab = (this.activeTab === 'scanner') ? 'vcard' : this.activeTab;
+            this.types[tab].settings = val;
+        },
+        get inputValues() {
+            const tab = (this.activeTab === 'scanner') ? 'vcard' : this.activeTab;
+            return this.types[tab].inputValues;
+        },
+        set inputValues(val) {
+            const tab = (this.activeTab === 'scanner') ? 'vcard' : this.activeTab;
+            this.types[tab].inputValues = val;
+        },
+        get data() {
+            const tab = (this.activeTab === 'scanner') ? 'vcard' : this.activeTab;
+            return this.types[tab].data;
+        },
+        set data(val) {
+            const tab = (this.activeTab === 'scanner') ? 'vcard' : this.activeTab;
+            this.types[tab].data = val;
         }
     };
 
@@ -35,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function init() {
         setupTabs();
         setupInputs();
+        setupLogoOverlay();
         setupVCardUI(); // New UI Logic for vCard
         setupScanner();
         
@@ -264,6 +305,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.classList.add('active');
                 document.getElementById(`tab-${target}`).classList.add('active');
 
+                // Load visual settings and input values from this tab's state
+                restoreUIFromActiveTab();
+
                 if (target !== 'raw' && target !== 'scanner') {
                     updateDataFromInputs();
                 }
@@ -312,18 +356,26 @@ document.addEventListener('DOMContentLoaded', () => {
             'shape-module': 'shapeModule',
             'shape-finder': 'shapeFinder',
             'qr-padding': 'padding',
-            'qr-size': 'moduleSize'
+            'qr-size': 'moduleSize',
+            'logo-size': 'logoSize',
+            'logo-shape': 'logoShape',
+            'logo-padding': 'logoPadding'
         };
 
         Object.entries(stylingInputs).forEach(([id, key]) => {
             const el = document.getElementById(id);
             if (!el) return;
-            el.addEventListener('input', debounce(() => {
+            const eventType = (el.tagName === 'SELECT') ? 'change' : 'input';
+            el.addEventListener(eventType, debounce(() => {
                 let val = el.value;
-                if (key === 'padding' || key === 'moduleSize') val = parseInt(val) || 0;
+                if (key === 'padding' || key === 'moduleSize' || key === 'logoSize' || key === 'logoPadding') {
+                    val = parseInt(val) || 0;
+                }
                 state.settings[key] = val;
                 
-                if (id === 'qr-error') updateErrorHelpText(el.value);
+                if (id === 'qr-error') {
+                    updateLogoWarning(val, state.settings.overlayImage);
+                }
                 updateQR();
                 saveToLocalStorage();
             }, 200));
@@ -359,19 +411,23 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 'label-top-align', parent: 'labelTop', key: 'align' },
             { id: 'label-top-color', parent: 'labelTop', key: 'color' },
             { id: 'label-top-font', parent: 'labelTop', key: 'font' },
+            { id: 'label-top-size', parent: 'labelTop', key: 'size' },
             { id: 'label-bottom-text', parent: 'labelBottom', key: 'text' },
             { id: 'label-bottom-align', parent: 'labelBottom', key: 'align' },
             { id: 'label-bottom-color', parent: 'labelBottom', key: 'color' },
-            { id: 'label-bottom-font', parent: 'labelBottom', key: 'font' }
+            { id: 'label-bottom-font', parent: 'labelBottom', key: 'font' },
+            { id: 'label-bottom-size', parent: 'labelBottom', key: 'size' }
         ];
 
         labelInputs.forEach(item => {
             const el = document.getElementById(item.id);
             if (!el) return;
-            const eventType = (item.key === 'font' || item.key === 'text') ? 'input' : 'change';
+            const eventType = (item.key === 'font' || item.key === 'text' || item.key === 'size') ? 'input' : 'change';
             
             el.addEventListener(eventType, debounce(() => {
-                state.settings[item.parent][item.key] = el.value;
+                let val = el.value;
+                if (item.key === 'size') val = parseInt(val) || 20;
+                state.settings[item.parent][item.key] = val;
                 updateQR();
                 saveToLocalStorage();
             }, 200));
@@ -548,25 +604,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Rendering Pipeline ---
-    function renderCanvas(qr, count) {
+    function renderCanvas(qr, count, targetCanvas = canvas, targetCtx = ctx, scale = 1) {
         const cellSize = state.settings.moduleSize || 15;
         const baseMargin = cellSize * 2; 
-        const labelMargin = cellSize * 4; 
+        
+        const topFontSize = parseInt(state.settings.labelTop.size) || 20;
+        const bottomFontSize = parseInt(state.settings.labelBottom.size) || 20;
         
         const userPadding = parseInt(state.settings.padding) || 0;
         
-        const marginTop = state.settings.labelTop.text ? labelMargin : baseMargin;
-        const marginBottom = state.settings.labelBottom.text ? labelMargin : baseMargin;
+        const marginTop = state.settings.labelTop.text ? Math.max(baseMargin, topFontSize * 1.8) : baseMargin;
+        const marginBottom = state.settings.labelBottom.text ? Math.max(baseMargin, bottomFontSize * 1.8) : baseMargin;
         const marginLeft = baseMargin;
         const marginRight = baseMargin;
         
         const size = count * cellSize;
         
-        canvas.width = size + marginLeft + marginRight + (userPadding * 2);
-        canvas.height = size + marginTop + marginBottom + (userPadding * 2);
+        // Set canvas size scaled up
+        targetCanvas.width = (size + marginLeft + marginRight + (userPadding * 2)) * scale;
+        targetCanvas.height = (size + marginTop + marginBottom + (userPadding * 2)) * scale;
 
-        ctx.fillStyle = state.settings.colorBg;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Scale context so all drawing operations are scaled automatically
+        if (scale !== 1) {
+            targetCtx.scale(scale, scale);
+        }
+
+        targetCtx.fillStyle = state.settings.colorBg;
+        targetCtx.fillRect(0, 0, size + marginLeft + marginRight + (userPadding * 2), size + marginTop + marginBottom + (userPadding * 2));
 
         const startX = marginLeft + userPadding;
         const startY = marginTop + userPadding;
@@ -577,105 +641,151 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const isFinder = (r < 7 && c < 7) || (r < 7 && c >= count - 7) || (r >= count - 7 && c < 7);
                 if (isFinder) continue;
+
+                // Skip drawing module if it's in the logo area!
+                if (state.settings.overlayImage && isCellInLogoArea(r, c, count, state.settings.logoSize)) {
+                    continue;
+                }
                 
-                ctx.fillStyle = state.settings.colorFg;
+                targetCtx.fillStyle = state.settings.colorFg;
                 const x = startX + (c * cellSize);
                 const y = startY + (r * cellSize);
-                drawModule(ctx, x, y, cellSize, state.settings.shapeModule);
+                drawModule(targetCtx, x, y, cellSize, state.settings.shapeModule);
             }
         }
 
-        drawFinderPattern(ctx, startX, startY, cellSize, 0, 0, state.settings.shapeFinder); 
-        drawFinderPattern(ctx, startX + (count - 7) * cellSize, startY, cellSize, 0, 0, state.settings.shapeFinder); 
-        drawFinderPattern(ctx, startX, startY + (count - 7) * cellSize, cellSize, 0, 0, state.settings.shapeFinder); 
+        drawFinderPattern(targetCtx, startX, startY, cellSize, 0, 0, state.settings.shapeFinder); 
+        drawFinderPattern(targetCtx, startX + (count - 7) * cellSize, startY, cellSize, 0, 0, state.settings.shapeFinder); 
+        drawFinderPattern(targetCtx, startX, startY + (count - 7) * cellSize, cellSize, 0, 0, state.settings.shapeFinder); 
 
-        drawLabels(startX, size, marginTop, marginBottom, userPadding);
+        // Draw Logo Overlay
+        if (state.logoImageObject) {
+            const centerX = startX + (size / 2);
+            const centerY = startY + (size / 2);
+            const logoSizePercent = parseInt(state.settings.logoSize) || 20;
+            const maxLogoSize = size * (logoSizePercent / 100);
+            
+            let logoW = maxLogoSize;
+            let logoH = maxLogoSize;
+            const imgAspect = state.logoImageObject.width / state.logoImageObject.height;
+            if (imgAspect > 1) {
+                logoH = maxLogoSize / imgAspect;
+            } else {
+                logoW = maxLogoSize * imgAspect;
+            }
+
+            // Draw background shape
+            const logoBgShape = state.settings.logoShape || 'none';
+            const logoPadding = parseInt(state.settings.logoPadding) || 4;
+            const bgSize = maxLogoSize + logoPadding * 2;
+
+            if (logoBgShape !== 'none') {
+                targetCtx.fillStyle = state.settings.colorBg;
+                targetCtx.beginPath();
+                if (logoBgShape === 'circle') {
+                    targetCtx.arc(centerX, centerY, bgSize / 2, 0, Math.PI * 2);
+                } else if (logoBgShape === 'rounded') {
+                    const radius = cellSize * 0.8;
+                    targetCtx.roundRect(centerX - bgSize / 2, centerY - bgSize / 2, bgSize, bgSize, radius);
+                } else { // square
+                    targetCtx.rect(centerX - bgSize / 2, centerY - bgSize / 2, bgSize, bgSize);
+                }
+                targetCtx.fill();
+            }
+
+            // Draw the image logo
+            targetCtx.drawImage(state.logoImageObject, centerX - logoW / 2, centerY - logoH / 2, logoW, logoH);
+        }
+
+        drawLabels(targetCanvas, targetCtx, startX, size, marginTop, marginBottom, userPadding);
     }
 
-    function drawModule(ctx, x, y, size, shape) {
-        ctx.beginPath();
+    function drawModule(targetCtx, x, y, size, shape) {
+        targetCtx.beginPath();
         if (shape === 'dots') {
-            ctx.arc(x + size / 2, y + size / 2, size * 0.4, 0, Math.PI * 2);
+            targetCtx.arc(x + size / 2, y + size / 2, size * 0.4, 0, Math.PI * 2);
         } else if (shape === 'rounded') {
             const r = size * 0.35;
-            ctx.roundRect(x + 0.5, y + 0.5, size - 1, size - 1, r);
+            targetCtx.roundRect(x + 0.5, y + 0.5, size - 1, size - 1, r);
         } else {
-            ctx.rect(x, y, size, size);
+            targetCtx.rect(x, y, size, size);
         }
-        ctx.fill();
+        targetCtx.fill();
     }
 
-    function drawFinderPattern(ctx, x, y, cellSize, r, c, shape) {
+    function drawFinderPattern(targetCtx, x, y, cellSize, r, c, shape) {
         const size = cellSize * 7;
         const fg = state.settings.colorFg;
         const bg = state.settings.colorBg;
 
-        ctx.fillStyle = fg;
-        drawBox(ctx, x, y, size, cellSize, shape);
+        targetCtx.fillStyle = fg;
+        drawBox(targetCtx, x, y, size, cellSize, shape);
 
-        ctx.fillStyle = bg;
-        drawBox(ctx, x + cellSize, y + cellSize, cellSize * 5, cellSize, shape);
+        targetCtx.fillStyle = bg;
+        drawBox(targetCtx, x + cellSize, y + cellSize, cellSize * 5, cellSize, shape);
 
-        ctx.fillStyle = fg;
+        targetCtx.fillStyle = fg;
         const coreSize = cellSize * 3;
         const coreOffset = cellSize * 2;
         if (shape === 'dots') {
-            ctx.beginPath();
-            ctx.arc(x + size / 2, y + size / 2, coreSize / 2, 0, Math.PI * 2);
-            ctx.fill();
+            targetCtx.beginPath();
+            targetCtx.arc(x + size / 2, y + size / 2, coreSize / 2, 0, Math.PI * 2);
+            targetCtx.fill();
         } else if (shape === 'rounded') {
-            ctx.beginPath();
-            ctx.roundRect(x + coreOffset, y + coreOffset, coreSize, coreSize, cellSize * 0.8);
-            ctx.fill();
+            targetCtx.beginPath();
+            targetCtx.roundRect(x + coreOffset, y + coreOffset, coreSize, coreSize, cellSize * 0.8);
+            targetCtx.fill();
         } else {
-            ctx.fillRect(x + coreOffset, y + coreOffset, coreSize, coreSize);
+            targetCtx.fillRect(x + coreOffset, y + coreOffset, coreSize, coreSize);
         }
     }
 
-    function drawBox(ctx, x, y, size, thickness, shape) {
+    function drawBox(targetCtx, x, y, size, thickness, shape) {
         if (shape === 'dots') {
-            ctx.beginPath();
-            ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-            ctx.arc(x + size / 2, y + size / 2, (size / 2) - thickness, 0, Math.PI * 2, true);
-            ctx.fill();
+            targetCtx.beginPath();
+            targetCtx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+            targetCtx.arc(x + size / 2, y + size / 2, (size / 2) - thickness, 0, Math.PI * 2, true);
+            targetCtx.fill();
         } else if (shape === 'rounded') {
-            ctx.beginPath();
+            targetCtx.beginPath();
             const rOuter = thickness * 1.5;
             const rInner = Math.max(0, rOuter - thickness);
-            ctx.roundRect(x, y, size, size, rOuter);
-            ctx.roundRect(x + thickness, y + thickness, size - thickness * 2, size - thickness * 2, rInner);
-            ctx.fill('evenodd');
+            targetCtx.roundRect(x, y, size, size, rOuter);
+            targetCtx.roundRect(x + thickness, y + thickness, size - thickness * 2, size - thickness * 2, rInner);
+            targetCtx.fill('evenodd');
         } else {
-            ctx.fillRect(x, y, size, size);
-            const lastColor = ctx.fillStyle;
-            ctx.fillStyle = state.settings.colorBg;
-            ctx.fillRect(x + thickness, y + thickness, size - thickness * 2, size - thickness * 2);
-            ctx.fillStyle = lastColor;
+            targetCtx.fillRect(x, y, size, size);
+            const lastColor = targetCtx.fillStyle;
+            targetCtx.fillStyle = state.settings.colorBg;
+            targetCtx.fillRect(x + thickness, y + thickness, size - thickness * 2, size - thickness * 2);
+            targetCtx.fillStyle = lastColor;
         }
     }
 
-    function drawLabels(startX, qrSize, marginTop, marginBottom, userPadding) {
-        const centerX = canvas.width / 2;
+    function drawLabels(targetCanvas, targetCtx, startX, qrSize, marginTop, marginBottom, userPadding) {
+        const unscaledWidth = qrSize + (state.settings.moduleSize * 4) + (userPadding * 2);
+        const unscaledHeight = qrSize + marginTop + marginBottom + (userPadding * 2);
+        const centerX = unscaledWidth / 2;
         
         const renderLabel = (labelState, yPos) => {
             if (!labelState.text) return;
             
-            ctx.fillStyle = labelState.color;
-            ctx.font = `bold 20px "${labelState.font}", sans-serif`; 
-            ctx.textBaseline = 'middle';
+            targetCtx.fillStyle = labelState.color;
+            targetCtx.font = `bold ${labelState.size || 20}px "${labelState.font}", sans-serif`; 
+            targetCtx.textBaseline = 'middle';
 
             let xPos = centerX;
             if (labelState.align === 'left') {
                 xPos = startX; 
-                ctx.textAlign = 'left';
+                targetCtx.textAlign = 'left';
             } else if (labelState.align === 'right') {
                 xPos = startX + qrSize;
-                ctx.textAlign = 'right';
+                targetCtx.textAlign = 'right';
             } else {
-                ctx.textAlign = 'center';
+                targetCtx.textAlign = 'center';
             }
             
-            ctx.fillText(labelState.text, xPos, yPos);
+            targetCtx.fillText(labelState.text, xPos, yPos);
         };
 
         if (state.settings.labelTop.text) {
@@ -683,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (state.settings.labelBottom.text) {
-            const y = canvas.height - userPadding - (marginBottom / 2);
+            const y = unscaledHeight - userPadding - (marginBottom / 2);
             renderLabel(state.settings.labelBottom, y);
         }
     }
@@ -794,96 +904,314 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function restoreState(loadedState) {
-        state.activeTab = loadedState.activeTab || 'raw';
-        // We do NOT overwrite active data immediately; we let updateDataFromInputs regenerate it 
-        // from the restored inputs to ensure consistency.
+    function migrateState(loadedState) {
+        if (!loadedState) return null;
         
-        // Merge settings
-        state.settings = { ...state.settings, ...loadedState.settings };
-        if (loadedState.settings.labelTop) state.settings.labelTop = { ...loadedState.settings.labelTop };
-        if (loadedState.settings.labelBottom) state.settings.labelBottom = { ...loadedState.settings.labelBottom };
+        if (loadedState.types) {
+            Object.keys(loadedState.types).forEach(type => {
+                loadedState.types[type].settings = {
+                    ...defaultSettings,
+                    ...loadedState.types[type].settings
+                };
+            });
+            return loadedState;
+        }
 
-        const newValues = loadedState.inputValues || {};
+        const newState = {
+            activeTab: loadedState.activeTab || 'vcard',
+            types: {
+                vcard: createDefaultTypeState(),
+                url: createDefaultTypeState(),
+                wifi: createDefaultTypeState(),
+                raw: createDefaultTypeState()
+            }
+        };
 
-        Object.entries(newValues).forEach(([id, val]) => {
-            const el = document.getElementById(id);
-            if (el) {
-                // Determine if we should restore this field
-                const parentTab = el.closest('.tab-pane');
-                let shouldRestore = false;
-
-                if (!parentTab) {
-                    // Global setting (not in a tab) -> Always restore
-                    shouldRestore = true;
-                } else if (parentTab.id === `tab-${state.activeTab}`) {
-                    // Input belongs to the active tab of the loaded QR -> Restore
-                    shouldRestore = true;
-                }
-
-                if (shouldRestore) {
-                    if (el.type === 'checkbox') {
-                        el.checked = val;
+        const active = newState.activeTab;
+        if (loadedState.settings) {
+            newState.types[active].settings = {
+                ...newState.types[active].settings,
+                ...loadedState.settings
+            };
+        }
+        if (loadedState.inputValues) {
+            Object.entries(loadedState.inputValues).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const pane = el.closest('.tab-pane');
+                    if (pane) {
+                        const tabType = pane.id.replace('tab-', '');
+                        if (newState.types[tabType]) {
+                            newState.types[tabType].inputValues[id] = val;
+                        }
                     } else {
-                        el.value = val;
+                        newState.types[active].inputValues[id] = val;
                     }
-                    // Sync to current state
-                    state.inputValues[id] = val;
+                }
+            });
+        }
+        
+        return newState;
+    }
 
-                    // UI Logic: Auto-expand groups and unhide name fields if they have content
-                    if (val && val.toString().trim() !== '') {
-                        // 1. Unhide Name Fields
+    function restoreState(loadedState) {
+        const migrated = migrateState(loadedState);
+        if (!migrated) return;
+
+        state.activeTab = migrated.activeTab || 'raw';
+        Object.keys(migrated.types).forEach(type => {
+            state.types[type] = migrated.types[type];
+        });
+
+        const tabBtn = document.querySelector(`.tab-btn[data-tab="${state.activeTab}"]`);
+        if (tabBtn) {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabPanes.forEach(p => p.classList.remove('active'));
+            tabBtn.classList.add('active');
+            const targetPane = document.getElementById(`tab-${state.activeTab}`);
+            if (targetPane) targetPane.classList.add('active');
+        }
+
+        restoreUIFromActiveTab();
+
+        if (state.activeTab !== 'raw') {
+            updateDataFromInputs();
+        } else {
+            const rawEl = document.getElementById('raw-data');
+            if (rawEl) state.data = rawEl.value;
+        }
+
+        updateQR();
+        saveToLocalStorage();
+    }
+
+    function restoreUIFromActiveTab() {
+        const active = getActiveType();
+        const settings = state.types[active].settings;
+        const inputVals = state.types[active].inputValues;
+
+        setVal('color-fg', settings.colorFg);
+        setVal('color-bg', settings.colorBg);
+        setVal('qr-padding', settings.padding);
+        setVal('qr-size', settings.moduleSize);
+        setVal('shape-finder', settings.shapeFinder);
+        setVal('shape-module', settings.shapeModule);
+        setVal('qr-error', settings.errorCorrection);
+
+        if (settings.labelTop) {
+            setVal('label-top-text', settings.labelTop.text || '');
+            setVal('label-top-color', settings.labelTop.color || '#000000');
+            setVal('label-top-align', settings.labelTop.align || 'center');
+            setVal('label-top-font', settings.labelTop.font || 'sans-serif');
+            setVal('label-top-size', settings.labelTop.size || 20);
+        }
+        if (settings.labelBottom) {
+            setVal('label-bottom-text', settings.labelBottom.text || '');
+            setVal('label-bottom-color', settings.labelBottom.color || '#000000');
+            setVal('label-bottom-align', settings.labelBottom.align || 'center');
+            setVal('label-bottom-font', settings.labelBottom.font || 'sans-serif');
+            setVal('label-bottom-size', settings.labelBottom.size || 20);
+        }
+
+        setVal('logo-size', settings.logoSize || 20);
+        setVal('logo-shape', settings.logoShape || 'none');
+        setVal('logo-padding', settings.logoPadding || 4);
+
+        updateLogoPreviewAndImage(settings.overlayImage);
+
+        const activePane = document.getElementById(`tab-${active}`);
+        if (activePane) {
+            const inputs = activePane.querySelectorAll('input, select, textarea');
+            inputs.forEach(el => {
+                if (el.id) {
+                    const savedVal = inputVals[el.id];
+                    if (savedVal !== undefined) {
+                        if (el.type === 'checkbox') {
+                            el.checked = savedVal;
+                        } else {
+                            el.value = savedVal;
+                        }
+                    } else {
+                        // If it's URL input, set its default if DOM is empty
+                        if (el.id === 'url-input' && !el.value) {
+                            el.value = 'https://qr.krets.com';
+                        }
+                        // Sync current DOM value to state
+                        inputVals[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+                    }
+                    
+                    const valStr = (el.value || '').toString();
+                    if (valStr.trim() !== '') {
                         const wrapper = el.closest('.name-field-wrapper');
                         if (wrapper && wrapper.classList.contains('hidden')) {
                             wrapper.classList.remove('hidden');
                         }
-
-                        // 2. Expand Groups
                         const group = el.closest('.vcard-group');
                         if (group && group.classList.contains('collapsed')) {
                             group.classList.remove('collapsed');
                         }
                     }
                 }
+            });
+        }
+        
+        updateLogoWarning(settings.errorCorrection, settings.overlayImage);
+    }
+
+    function updateLogoPreviewAndImage(overlayImage) {
+        const thumbnail = document.getElementById('logo-preview-thumbnail');
+        const placeholder = document.getElementById('logo-placeholder-text');
+        const removeBtn = document.getElementById('logo-remove-btn');
+
+        if (!thumbnail) return;
+
+        if (overlayImage) {
+            thumbnail.src = overlayImage;
+            thumbnail.style.display = 'block';
+            placeholder.style.display = 'none';
+            removeBtn.style.display = 'block';
+
+            if (!state.logoImageObject || state.logoImageObject.src !== overlayImage) {
+                const img = new Image();
+                img.onload = () => {
+                    state.logoImageObject = img;
+                    updateQR();
+                };
+                img.src = overlayImage;
+            }
+        } else {
+            thumbnail.src = '';
+            thumbnail.style.display = 'none';
+            placeholder.style.display = 'block';
+            removeBtn.style.display = 'none';
+            state.logoImageObject = null;
+        }
+    }
+
+    function handleLogoFile(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Please select a valid image file.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const maxDim = 512;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    if (w > h) {
+                        h = Math.round((h * maxDim) / w);
+                        w = maxDim;
+                    } else {
+                        w = Math.round((w * maxDim) / h);
+                        h = maxDim;
+                    }
+                }
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = w;
+                tempCanvas.height = h;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(img, 0, 0, w, h);
+
+                const base64 = tempCanvas.toDataURL('image/png');
+                
+                state.settings.overlayImage = base64;
+                state.logoImageObject = img;
+
+                updateLogoPreviewAndImage(base64);
+                updateLogoWarning(state.settings.errorCorrection, base64);
+                
+                updateQR();
+                saveToLocalStorage();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function setupLogoOverlay() {
+        const dropZone = document.getElementById('logo-drop-zone');
+        const fileInput = document.getElementById('logo-file-input');
+        const removeBtn = document.getElementById('logo-remove-btn');
+
+        if (!dropZone) return;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleLogoFile(e.target.files[0]);
             }
         });
 
-        // Restore Settings UI (Redundant for inputs covered above, but ensures selects/color inputs are caught if ID didn't match inputValues key somehow, though it should)
-        setVal('qr-error', state.settings.errorCorrection);
-        setVal('color-fg', state.settings.colorFg);
-        setVal('color-bg', state.settings.colorBg);
-        setVal('shape-module', state.settings.shapeModule);
-        setVal('shape-finder', state.settings.shapeFinder);
-        setVal('qr-padding', state.settings.padding); 
-        setVal('qr-size', state.settings.moduleSize);
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
 
-        if (state.settings.labelTop) {
-            setVal('label-top-text', state.settings.labelTop.text);
-            setVal('label-top-align', state.settings.labelTop.align);
-            setVal('label-top-color', state.settings.labelTop.color);
-            setVal('label-top-font', state.settings.labelTop.font);
-        }
-        
-        if (state.settings.labelBottom) {
-            setVal('label-bottom-text', state.settings.labelBottom.text);
-            setVal('label-bottom-align', state.settings.labelBottom.align);
-            setVal('label-bottom-color', state.settings.labelBottom.color);
-            setVal('label-bottom-font', state.settings.labelBottom.font);
-        }
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
 
-        // Switch Tab
-        const tabBtn = document.querySelector(`.tab-btn[data-tab="${state.activeTab}"]`);
-        if (tabBtn) tabBtn.click();
-        
-        // Regenerate Data and QR
-        if (state.activeTab !== 'raw') {
-            updateDataFromInputs();
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleLogoFile(files[0]);
+            }
+        });
+
+        document.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (const item of items) {
+                if (item.type.indexOf('image') === 0) {
+                    const blob = item.getAsFile();
+                    handleLogoFile(blob);
+                    break;
+                }
+            }
+        });
+
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Avoid triggering file upload dialog on container
+            state.settings.overlayImage = null;
+            state.logoImageObject = null;
+            updateLogoPreviewAndImage(null);
+            updateLogoWarning(state.settings.errorCorrection, null);
+            updateQR();
+            saveToLocalStorage();
+        });
+    }
+
+    function updateLogoWarning(errorCorrection, overlayImage) {
+        const warning = document.getElementById('logo-warning');
+        if (!warning) return;
+        if (overlayImage && errorCorrection === 'L') {
+            warning.style.display = 'block';
         } else {
-            // For Raw tab, we must ensure state.data is set from the restored textarea
-            state.data = document.getElementById('raw-data').value;
+            warning.style.display = 'none';
         }
-        updateQR();
-        saveToLocalStorage(); // Persist the restored state immediately
+    }
+
+    function getActiveType() {
+        return (state.activeTab === 'scanner') ? 'vcard' : state.activeTab;
+    }
+
+    function isCellInLogoArea(r, c, count, logoSizePercent) {
+        const maxLogoModules = count - 14; 
+        let logoModules = Math.floor(count * (logoSizePercent / 100));
+        if (logoModules % 2 !== count % 2) {
+            logoModules = Math.max(1, logoModules - 1);
+        }
+        logoModules = Math.min(maxLogoModules, Math.max(3, logoModules));
+        
+        const centerStart = (count - logoModules) / 2;
+        const centerEnd = centerStart + logoModules;
+        
+        return r >= centerStart && r < centerEnd && c >= centerStart && c < centerEnd;
     }
 
     function setVal(id, val) {
@@ -900,19 +1228,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function exportPNG() {
+        const scaleSelect = document.getElementById('download-scale');
+        const scale = parseInt(scaleSelect ? scaleSelect.value : 4) || 4;
+
         const hash = await simpleHash(state.data);
         const filename = `qr_${hash}.png`;
-        canvas.toBlob(async (blob) => {
-            const appState = JSON.stringify(state);
-            let newBlob = await addMetadataToPNG(blob, "Description", state.data);
-            newBlob = await addMetadataToPNG(newBlob, "App-State", appState);
-            const url = URL.createObjectURL(newBlob);
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = url;
-            link.click();
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-        }, 'image/png');
+
+        try {
+            const qr = qrcode(0, state.settings.errorCorrection);
+            qr.addData(state.data);
+            qr.make();
+            const moduleCount = qr.getModuleCount();
+
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+
+            renderCanvas(qr, moduleCount, tempCanvas, tempCtx, scale);
+
+            tempCanvas.toBlob(async (blob) => {
+                const appState = JSON.stringify(state);
+                let newBlob = await addMetadataToPNG(blob, "Description", state.data);
+                newBlob = await addMetadataToPNG(newBlob, "App-State", appState);
+                const url = URL.createObjectURL(newBlob);
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = url;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            }, 'image/png');
+        } catch (e) {
+            console.error("Failed to export PNG", e);
+        }
     }
 
     async function addMetadataToPNG(blob, key, text) {
