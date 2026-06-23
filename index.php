@@ -229,7 +229,10 @@ if (file_exists($gitRefPath)) {
                         <div class="field-row wifi-settings-row">
                             <div class="field" style="flex: 2;">
                                 <label for="wifi-pass">Password</label>
-                                <input type="password" id="wifi-pass">
+                                <div class="password-wrapper">
+                                    <input type="password" id="wifi-pass">
+                                    <button type="button" id="wifi-pass-toggle" class="password-toggle-btn">Show</button>
+                                </div>
                             </div>
                             <div class="field" style="flex: 1.2;">
                                 <label for="wifi-enc">Type</label>

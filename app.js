@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupInputs();
         setupLogoOverlay();
         setupVCardUI(); // New UI Logic for vCard
+        setupPasswordToggle();
         setupScanner();
         
         // 1. Try to load from LocalStorage
@@ -349,6 +350,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         downloadBtn.addEventListener('click', exportPNG);
+    }
+
+    function setupPasswordToggle() {
+        const toggleBtn = document.getElementById('wifi-pass-toggle');
+        const passInput = document.getElementById('wifi-pass');
+        if (!toggleBtn || !passInput) return;
+
+        toggleBtn.addEventListener('click', () => {
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleBtn.textContent = 'Hide';
+            } else {
+                passInput.type = 'password';
+                toggleBtn.textContent = 'Show';
+            }
+        });
     }
 
     function setupScanner() {

@@ -742,6 +742,38 @@ canvas {
     border: 1px solid rgba(220, 53, 69, 0.1);
 }
 
+/* Password Wrapper & Toggle */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.password-wrapper input {
+    padding-right: 3.5rem !important;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--muted-text);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    user-select: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.password-toggle-btn:hover {
+    color: var(--accent-color);
+    background-color: rgba(55, 142, 254, 0.05);
+}
+
 /* Brand Styling */
 .brand {
     font-size: 1.5rem;
