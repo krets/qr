@@ -369,13 +369,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const passInput = document.getElementById('wifi-pass');
         if (!toggleBtn || !passInput) return;
 
+        const eyeOpen = toggleBtn.querySelector('.eye-open');
+        const eyeClosed = toggleBtn.querySelector('.eye-closed');
+
         toggleBtn.addEventListener('click', () => {
             if (passInput.type === 'password') {
                 passInput.type = 'text';
-                toggleBtn.textContent = 'Hide';
+                if (eyeOpen) eyeOpen.style.display = 'none';
+                if (eyeClosed) eyeClosed.style.display = 'block';
             } else {
                 passInput.type = 'password';
-                toggleBtn.textContent = 'Show';
+                if (eyeOpen) eyeOpen.style.display = 'block';
+                if (eyeClosed) eyeClosed.style.display = 'none';
             }
         });
     }
@@ -1231,39 +1236,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (overlayImage) {
             const logoSize = parseInt(state.settings.logoSize) || 20;
             let levelName = 'Medium (15%)';
-            let levelCode = 'M';
             let extra = '';
 
             if (logoSize <= 15) {
                 levelName = 'Medium (15%)';
-                levelCode = 'M';
             } else if (logoSize <= 25) {
                 levelName = 'Quartile (25%)';
-                levelCode = 'Q';
                 extra = ' due to logo size';
             } else {
                 levelName = 'High (30%)';
-                levelCode = 'H';
                 extra = ' for a very large logo';
             }
 
             warning.innerHTML = `⚙️ Enforcing <strong>${levelName}</strong> Error Correction${extra} to keep the QR code scannable. Options below this are disabled.`;
             warning.style.display = 'block';
-            
-            // Adjust warning style color based on severity
-            if (logoSize > 25) {
-                warning.style.color = '#dc3545';
-                warning.style.backgroundColor = 'rgba(220, 53, 69, 0.05)';
-                warning.style.borderColor = 'rgba(220, 53, 69, 0.1)';
-            } else if (logoSize > 15) {
-                warning.style.color = '#fd7e14';
-                warning.style.backgroundColor = 'rgba(253, 126, 20, 0.05)';
-                warning.style.borderColor = 'rgba(253, 126, 20, 0.1)';
-            } else {
-                warning.style.color = 'var(--text-color)';
-                warning.style.backgroundColor = 'rgba(108, 117, 125, 0.05)';
-                warning.style.borderColor = 'rgba(108, 117, 125, 0.1)';
-            }
         } else {
             warning.style.display = 'none';
         }
