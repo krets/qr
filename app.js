@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.settings[key] = val;
                 
                 if (id === 'qr-error') {
-                    updateLogoWarning(val, state.settings.overlayImage);
+                    updateLogoWarning();
                 }
                 updateQR();
                 saveToLocalStorage();
@@ -526,6 +526,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- QR Core ---
+    function enforceMinECC() {
+        const qrErrorSelect = document.getElementById('qr-error');
+        if (!qrErrorSelect) return;
+
+        let minECC = 'L'; // Default if no overlay image
+        if (state.settings.overlayImage) {
+            const logoSize = parseInt(state.settings.logoSize) || 20;
+            if (logoSize <= 15) {
+                minECC = 'M';
+            } else if (logoSize <= 25) {
+                minECC = 'Q';
+            } else {
+                minECC = 'H';
+            }
+        }
+
+        const eccOrder = { 'L': 0, 'M': 1, 'Q': 2, 'H': 3 };
+        const currentECC = state.settings.errorCorrection || 'M';
+
+        // Update select options disabled status
+        Array.from(qrErrorSelect.options).forEach(opt => {
+            const val = opt.value;
+            if (eccOrder[val] < eccOrder[minECC]) {
+                opt.disabled = true;
+            } else {
+                opt.disabled = false;
+            }
+        });
+
+        // If current selection is less than minECC, auto-upgrade
+        if (eccOrder[currentECC] < eccOrder[minECC]) {
+            state.settings.errorCorrection = minECC;
+            qrErrorSelect.value = minECC;
+        }
+
+        // Always sync warning message
+        updateLogoWarning();
+    }
+
     function updateQR() {
         if (!state.data) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -533,6 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
+            enforceMinECC();
             const qr = qrcode(0, state.settings.errorCorrection);
             qr.addData(state.data);
             qr.make();
@@ -673,8 +713,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 targetCtx.fill();
             }
 
-            // Draw the image logo
-            targetCtx.drawImage(state.logoImageObject, centerX - logoW / 2, centerY - logoH / 2, logoW, logoH);
+            // Draw the image logo (with clipping if a shape is active)
+            if (logoBgShape !== 'none') {
+                targetCtx.save();
+                targetCtx.beginPath();
+                if (logoBgShape === 'circle') {
+                    const radius = Math.min(logoW, logoH) / 2;
+                    targetCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                } else if (logoBgShape === 'rounded') {
+                    const radius = cellSize * 0.8;
+                    targetCtx.roundRect(centerX - logoW / 2, centerY - logoH / 2, logoW, logoH, radius);
+                } else if (logoBgShape === 'square') {
+                    targetCtx.rect(centerX - logoW / 2, centerY - logoH / 2, logoW, logoH);
+                }
+                targetCtx.clip();
+                targetCtx.drawImage(state.logoImageObject, centerX - logoW / 2, centerY - logoH / 2, logoW, logoH);
+                targetCtx.restore();
+            } else {
+                targetCtx.drawImage(state.logoImageObject, centerX - logoW / 2, centerY - logoH / 2, logoW, logoH);
+            }
         }
 
         drawLabels(targetCanvas, targetCtx, startX, size, marginTop, marginBottom, userPadding);
@@ -1035,7 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        updateLogoWarning(settings.errorCorrection, settings.overlayImage);
+        updateLogoWarning();
     }
 
     function updateLogoPreviewAndImage(overlayImage) {
@@ -1103,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 state.logoImageObject = img;
 
                 updateLogoPreviewAndImage(base64);
-                updateLogoWarning(state.settings.errorCorrection, base64);
+                updateLogoWarning();
                 
                 updateQR();
                 saveToLocalStorage();
@@ -1160,17 +1217,53 @@ document.addEventListener('DOMContentLoaded', () => {
             state.settings.overlayImage = null;
             state.logoImageObject = null;
             updateLogoPreviewAndImage(null);
-            updateLogoWarning(state.settings.errorCorrection, null);
+            updateLogoWarning();
             updateQR();
             saveToLocalStorage();
         });
     }
 
-    function updateLogoWarning(errorCorrection, overlayImage) {
+    function updateLogoWarning() {
         const warning = document.getElementById('logo-warning');
         if (!warning) return;
-        if (overlayImage && errorCorrection === 'L') {
+
+        const overlayImage = state.settings.overlayImage;
+        if (overlayImage) {
+            const logoSize = parseInt(state.settings.logoSize) || 20;
+            let levelName = 'Medium (15%)';
+            let levelCode = 'M';
+            let extra = '';
+
+            if (logoSize <= 15) {
+                levelName = 'Medium (15%)';
+                levelCode = 'M';
+            } else if (logoSize <= 25) {
+                levelName = 'Quartile (25%)';
+                levelCode = 'Q';
+                extra = ' due to logo size';
+            } else {
+                levelName = 'High (30%)';
+                levelCode = 'H';
+                extra = ' for a very large logo';
+            }
+
+            warning.innerHTML = `⚙️ Enforcing <strong>${levelName}</strong> Error Correction${extra} to keep the QR code scannable. Options below this are disabled.`;
             warning.style.display = 'block';
+            
+            // Adjust warning style color based on severity
+            if (logoSize > 25) {
+                warning.style.color = '#dc3545';
+                warning.style.backgroundColor = 'rgba(220, 53, 69, 0.05)';
+                warning.style.borderColor = 'rgba(220, 53, 69, 0.1)';
+            } else if (logoSize > 15) {
+                warning.style.color = '#fd7e14';
+                warning.style.backgroundColor = 'rgba(253, 126, 20, 0.05)';
+                warning.style.borderColor = 'rgba(253, 126, 20, 0.1)';
+            } else {
+                warning.style.color = 'var(--text-color)';
+                warning.style.backgroundColor = 'rgba(108, 117, 125, 0.05)';
+                warning.style.borderColor = 'rgba(108, 117, 125, 0.1)';
+            }
         } else {
             warning.style.display = 'none';
         }
@@ -1320,10 +1413,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function parseVCard(text) {
-        const lines = text.split(/\r?\n/);
+        // Unfold vCard lines (handle line continuations and soft line breaks)
+        const rawLines = text.split(/\r?\n/);
+        const lines = [];
+        
+        for (let i = 0; i < rawLines.length; i++) {
+            let line = rawLines[i];
+            
+            // vCard 3.0: lines starting with space/tab continue the previous line
+            while (i + 1 < rawLines.length && (rawLines[i + 1].startsWith(' ') || rawLines[i + 1].startsWith('\t'))) {
+                line += rawLines[i + 1].substring(1);
+                i++;
+            }
+            
+            // vCard 2.1: Quoted-Printable lines ending with '=' continue on the next line
+            while (line.endsWith('=') && i + 1 < rawLines.length) {
+                line = line.slice(0, -1);
+                let nextLine = rawLines[i + 1];
+                if (nextLine.startsWith(' ') || nextLine.startsWith('\t')) {
+                    nextLine = nextLine.substring(1);
+                }
+                line += nextLine;
+                i++;
+            }
+            lines.push(line);
+        }
+
         const data = {};
         const unescape = (val) => val.replace(/\\;/g, ';').replace(/\\,/g, ',').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
         
+        // Quoted-Printable decoder
+        const decodeQP = (str) => {
+            str = str.replace(/=\r?\n/g, '');
+            const bytes = [];
+            for (let i = 0; i < str.length; i++) {
+                if (str[i] === '=' && i + 2 < str.length) {
+                    const hex = str.substring(i + 1, i + 3);
+                    if (/^[0-9A-Faf-f]{2}$/.test(hex)) {
+                        bytes.push(parseInt(hex, 16));
+                        i += 2;
+                        continue;
+                    }
+                }
+                const code = str.charCodeAt(i);
+                if (code < 128) {
+                    bytes.push(code);
+                } else {
+                    const encoded = new TextEncoder().encode(str[i]);
+                    bytes.push(...encoded);
+                }
+            }
+            return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+        };
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
@@ -1332,7 +1474,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (colonIndex === -1) continue;
             
             const keySection = line.substring(0, colonIndex).toUpperCase();
-            const value = unescape(line.substring(colonIndex + 1));
+            let value = line.substring(colonIndex + 1);
+            
+            // Decode value if Quoted-Printable
+            if (keySection.includes('ENCODING=QUOTED-PRINTABLE') || keySection.includes('ENCODING=Q')) {
+                value = decodeQP(value);
+            } else {
+                value = unescape(value);
+            }
+            
             const key = keySection.split(';')[0];
             
             if (key === 'N') {
@@ -1344,6 +1494,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.suffix = parts[4] || '';
             } else if (key === 'NICKNAME') {
                 data.nickname = value;
+            } else if (key === 'X-ANDROID-CUSTOM') {
+                // Parse vnd.android.cursor.item/nickname
+                const parts = value.split(';');
+                if (parts[0] === 'vnd.android.cursor.item/nickname') {
+                    data.nickname = parts[1] || '';
+                }
             } else if (key === 'TITLE') {
                 data.title = value;
             } else if (key === 'ORG') {
@@ -1366,13 +1522,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.website = value;
             } else if (key === 'ADR') {
                 const parts = value.split(';');
-                data.adr = parts[2] || '';
+                data.adr = parts[2] || parts[1] || '';
                 data.city = parts[3] || '';
                 data.state = parts[4] || '';
                 data.zip = parts[5] || '';
                 data.country = parts[6] || '';
             } else if (key === 'BDAY') {
                 data.bday = value;
+            } else if (key === 'PHOTO') {
+                const isBase64 = keySection.includes('BASE64') || keySection.includes('ENCODING=B');
+                let photoVal = value.trim();
+                
+                if (isBase64) {
+                    photoVal = photoVal.replace(/\s/g, '');
+                    if (!photoVal.startsWith('data:')) {
+                        let mime = 'image/jpeg';
+                        if (keySection.includes('PNG')) {
+                            mime = 'image/png';
+                        } else if (keySection.includes('GIF')) {
+                            mime = 'image/gif';
+                        }
+                        photoVal = `data:${mime};base64,${photoVal}`;
+                    }
+                    data.photo = photoVal;
+                } else if (photoVal.startsWith('data:image/')) {
+                    data.photo = photoVal.replace(/\s/g, '');
+                } else if (photoVal.startsWith('http://') || photoVal.startsWith('https://')) {
+                    data.photo = photoVal;
+                }
             }
         }
         return data;
@@ -1419,6 +1596,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+
+        if (data.photo) {
+            state.settings.overlayImage = data.photo;
+            updateLogoPreviewAndImage(data.photo);
+        } else {
+            state.settings.overlayImage = null;
+            updateLogoPreviewAndImage(null);
+        }
 
         updateDataFromInputs();
         updateQR();

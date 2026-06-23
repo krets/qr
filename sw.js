@@ -1,10 +1,13 @@
-const CACHE_NAME = 'qr-generator-v1';
+const CACHE_NAME = 'qr-generator-v2';
 const ASSETS = [
   '/',
   '/index.php',
   '/style.css',
   '/app.js',
   '/favicon.ico',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/qr-krets-logo-alt.png',
   '/og-image.png',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js',
   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js'

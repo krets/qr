@@ -30,7 +30,7 @@ if (file_exists($gitRefPath)) {
     <link rel="stylesheet" href="style.css?v=<?= $version ?>">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#378efe">
+    <meta name="theme-color" content="#5c015e">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
@@ -40,7 +40,10 @@ if (file_exists($gitRefPath)) {
             <!-- COLUMN 1: Tab Specific Details -->
             <main class="config-pane">
             <header>
-                <h1 class="brand">qr.krets.com</h1>
+                <div class="brand-container">
+                    <img src="qr-krets-logo-alt.png" class="brand-logo" alt="QR Krets Logo">
+                    <h1 class="brand">qr.krets.com</h1>
+                </div>
             </header>
 
             <nav class="type-tabs">
