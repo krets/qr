@@ -4,6 +4,15 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        });
+    }
+
     // State management
     const defaultSettings = {
         errorCorrection: 'M',
@@ -97,6 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDataFromInputs();
             updateQR();
         }
+
+        // Check for shared contact via PWA Share Target
+        checkForSharedVCard();
     }
 
     // --- vCard UI Logic ---
@@ -1282,6 +1294,135 @@ document.addEventListener('DOMContentLoaded', () => {
         finalData.set(fullChunk, 33);
         finalData.set(data.subarray(33), 33 + fullChunk.length);
         return new Blob([finalData], { type: 'image/png' });
+    }
+
+    // --- PWA Share Target & vCard Parser Logic ---
+    async function checkForSharedVCard() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('received-share')) {
+            try {
+                const cache = await caches.open('shared-vcard-cache');
+                const response = await cache.match('/shared-vcard.vcf');
+                if (response) {
+                    const text = await response.text();
+                    await cache.delete('/shared-vcard.vcf'); // Clear cache
+                    
+                    const vcardData = parseVCard(text);
+                    populateVCardUI(vcardData);
+                    
+                    // Clean up URL query parameters
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            } catch (err) {
+                console.error('Error retrieving shared contact:', err);
+            }
+        }
+    }
+
+    function parseVCard(text) {
+        const lines = text.split(/\r?\n/);
+        const data = {};
+        const unescape = (val) => val.replace(/\\;/g, ';').replace(/\\,/g, ',').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            const colonIndex = line.indexOf(':');
+            if (colonIndex === -1) continue;
+            
+            const keySection = line.substring(0, colonIndex).toUpperCase();
+            const value = unescape(line.substring(colonIndex + 1));
+            const key = keySection.split(';')[0];
+            
+            if (key === 'N') {
+                const parts = value.split(';');
+                data.ln = parts[0] || '';
+                data.fn = parts[1] || '';
+                data.mn = parts[2] || '';
+                data.prefix = parts[3] || '';
+                data.suffix = parts[4] || '';
+            } else if (key === 'NICKNAME') {
+                data.nickname = value;
+            } else if (key === 'TITLE') {
+                data.title = value;
+            } else if (key === 'ORG') {
+                data.org = value;
+            } else if (key === 'EMAIL') {
+                data.email = value;
+            } else if (key === 'TEL') {
+                const type = keySection.toLowerCase();
+                if (type.includes('cell') || type.includes('mobile')) {
+                    data.telM = value;
+                } else if (type.includes('fax')) {
+                    data.fax = value;
+                } else if (type.includes('work')) {
+                    data.telW = value;
+                } else {
+                    if (!data.telM) data.telM = value;
+                    else if (!data.telW) data.telW = value;
+                }
+            } else if (key === 'URL') {
+                data.website = value;
+            } else if (key === 'ADR') {
+                const parts = value.split(';');
+                data.adr = parts[2] || '';
+                data.city = parts[3] || '';
+                data.state = parts[4] || '';
+                data.zip = parts[5] || '';
+                data.country = parts[6] || '';
+            } else if (key === 'BDAY') {
+                data.bday = value;
+            }
+        }
+        return data;
+    }
+
+    function populateVCardUI(data) {
+        const vcardTabBtn = document.querySelector('.tab-btn[data-tab="vcard"]');
+        if (vcardTabBtn) {
+            vcardTabBtn.click();
+        }
+
+        const mapping = {
+            'vc-prefix': data.prefix,
+            'vc-fn': data.fn,
+            'vc-mn': data.mn,
+            'vc-ln': data.ln,
+            'vc-suffix': data.suffix,
+            'vc-nickname': data.nickname,
+            'vc-title': data.title,
+            'vc-org': data.org,
+            'vc-email': data.email,
+            'vc-tel-m': data.telM,
+            'vc-tel-w': data.telW,
+            'vc-fax': data.fax,
+            'vc-web': data.website,
+            'vc-adr': data.adr,
+            'vc-zip': data.zip,
+            'vc-city': data.city,
+            'vc-state': data.state,
+            'vc-country': data.country,
+            'vc-bday': data.bday
+        };
+
+        Object.entries(mapping).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.value = val || '';
+            state.inputValues[id] = el.value;
+
+            if (el.value.trim() !== '') {
+                const group = el.closest('.vcard-group');
+                if (group && group.classList.contains('collapsed')) {
+                    group.classList.remove('collapsed');
+                }
+            }
+        });
+
+        updateDataFromInputs();
+        updateQR();
+        saveToLocalStorage();
     }
 
     async function simpleHash(str) {

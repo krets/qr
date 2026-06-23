@@ -1,0 +1,33 @@
+{
+  "name": "QR Code Generator",
+  "short_name": "QR Generator",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#378efe",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png"
+    }
+  ],
+  "share_target": {
+    "action": "/?shared=1",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "contact",
+          "accept": ["text/vcard", "text/x-vcard", ".vcf"]
+        }
+      ]
+    }
+  }
+}
