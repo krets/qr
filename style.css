@@ -465,9 +465,15 @@ canvas {
     background-color: var(--bg-color);
 }
 
+#raw-data,
+.scanner-result textarea {
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace !important;
+    font-size: 0.85rem !important;
+    line-height: 1.45;
+}
+
 .scanner-result textarea {
     background-color: var(--bg-color);
-    font-family: monospace;
 }
 
 .secondary-btn {
